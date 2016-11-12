@@ -130,10 +130,11 @@ object ShogiBoard extends JFXApp {
               }
             }
 
+            //todo 先手にup,後手にはdownの制約を加える
             else if ((clickedKoma == "香" || clickedKomaFlag == "香") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente" )  { /** 先手の香車の場合 */
               clickedKomaFlag = "香"
               sengoKomaFlag = "先手"
-              if ( moveDistance % 9 == 0 && moveDistance > 0) {
+              if (moveDistance % 9 == 0 && moveDistance > 0 && board.upJumpCheck(num, index)) {
                 if (sengoKoma != true) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -147,7 +148,7 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "香" || clickedKomaFlag == "香") && (sengoKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote" )  { /** 後手の香車の場合 */
               clickedKomaFlag = "香"
               sengoKomaFlag = "後手"
-              if ( moveDistance % 9 == 0 && moveDistance < 0 && nextTurn == "Sente" ) { //先手の場合は負、後手の場合は正のとき
+              if ( moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, index)) { //先手の場合は負、後手の場合は正のとき
                 if (sengoKoma != false) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -276,7 +277,8 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "角" || clickedKomaFlag == "角") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente") { /** 先手の角の場合*/
               clickedKomaFlag = "角"
               sengoKomaFlag = "先手"
-              if (absMoveDistance % 10 == 0 || absMoveDistance % 8 == 0) {
+              if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index))
+                || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) {
                 if (sengoKoma != true) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -290,7 +292,8 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "角" || clickedKomaFlag == "角") && (sengoKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote") { /** 後手の角の場合*/
               clickedKomaFlag = "角"
               sengoKomaFlag = "後手"
-              if (absMoveDistance % 10 == 0 || absMoveDistance % 8 == 0) {
+              if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上から右下方向
+                || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) { //右上から左下方向
                 if (sengoKoma != false) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -305,7 +308,9 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "飛" || clickedKomaFlag == "飛") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente") { /** 先手の飛車の場合 */
               clickedKomaFlag = "飛"
               sengoKomaFlag = "先手"
-              if ( absMoveDistance % 9 == 0 || existSelectedCellIndex / 9 == index / 9) {
+              if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
+                || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
+              ) {
                 if (sengoKoma != true) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -319,7 +324,9 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "飛" || clickedKomaFlag == "飛") && (sengoKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote") { /** 後手の飛車の場合 */
               clickedKomaFlag = "飛"
               sengoKomaFlag = "後手"
-              if ( absMoveDistance % 9 == 0 || existSelectedCellIndex / 9 == index / 9) {
+              if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
+                || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
+              ) {
                 if (sengoKoma != false) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -438,7 +445,9 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "馬" || clickedKomaFlag == "馬") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente") { /** 先手の馬の場合 */
               clickedKomaFlag = "馬"
               sengoKomaFlag = "先手"
-              if (absMoveDistance % 10 == 0 || absMoveDistance % 8 == 0 || absMoveDistance == 1 || absMoveDistance == 9) { //先手
+              if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上~右下
+                || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) //左下~右上
+                || absMoveDistance == 1 || absMoveDistance == 9) {
                 if (sengoKoma != true) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -451,7 +460,9 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "馬" || clickedKomaFlag == "馬") && (sengoKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote") { /** 後手の馬の場合 */
               clickedKomaFlag = "馬"
               sengoKomaFlag = "後手"
-              if (absMoveDistance % 10 == 0 || absMoveDistance % 8 == 0 || absMoveDistance == 1 || absMoveDistance == 9) { //後手
+              if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上~右下
+                || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) //左下~右上
+                || absMoveDistance == 1 || absMoveDistance == 9) {
                 if (sengoKoma != false) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -461,10 +472,13 @@ object ShogiBoard extends JFXApp {
                 }
               }
             }
-            else if ((clickedKoma == "龍" || clickedKomaFlag == "龍") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente") { /** 先手の龍の場合 */
+            else if ((clickedKoma == "龍" || clickedKomaFlag == "龍") && (sengoKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente") {
+              /** 先手の龍の場合 */
               clickedKomaFlag = "龍"
               sengoKomaFlag = "先手"
-              if ( absMoveDistance % 9 == 0 || existSelectedCellIndex / 9 == index / 9 || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
+              if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
+                || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
+                || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
                 if (sengoKoma != true) {
                   board = board.moveKoma(num, index)
                   selectedCellIndex = None
@@ -477,19 +491,24 @@ object ShogiBoard extends JFXApp {
             else if ((clickedKoma == "龍" || clickedKomaFlag == "龍") && (sengoKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote") { /** 後手の龍の場合 */
               clickedKomaFlag = "龍"
               sengoKomaFlag = "後手"
-              if ( absMoveDistance % 9 == 0 || existSelectedCellIndex / 9 == index / 9 || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
-                if (sengoKoma != false) {
-                  board = board.moveKoma(num, index)
-                  selectedCellIndex = None
-                  clickedKomaFlag = "NonTarget"
-                  sengoKomaFlag = "NonFlag"
-                  nextTurn = "Sente"
-                }
+                if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
+                  || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
+                  || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
+                    if (sengoKoma != false) {
+                      board = board.moveKoma(num, index)
+                      selectedCellIndex = None
+                      clickedKomaFlag = "NonTarget"
+                      sengoKomaFlag = "NonFlag"
+                      nextTurn = "Sente"
+                    }
               }
             }
 
             /** どの場面にも該当しない場合は、選択を外す */
-            else { selectedCellIndex = None }
+            else {
+              selectedCellIndex = None
+              println("selectedCellIndexCancelled")
+            }
 
           }
           case None =>
