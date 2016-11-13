@@ -1,6 +1,5 @@
 import com.atsfour.shogiai.{Koma, Board}
 
-//import scalafx.Includes._
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
 import scalafx.scene.control.Label
@@ -53,9 +52,7 @@ object ShogiBoard extends JFXApp {
 
   /** content = boardObj(board)としている
     * GridPaneクラスをインスタンス化して返す関数
-    * boardクラスのcells変数で、
-    * "場所は0~81をList形式で取得したものから、 `komas.find`して、今の場所を取得した"
-    * cellsで取得した結果に対して、Koma.classの処理をしている */
+    * boardクラスのcellsを使って定義されている */
   def boardObj(board: Board) = {
     val pane = new GridPane
     board.cells.zipWithIndex.foreach { //81回繰り返される
@@ -72,18 +69,13 @@ object ShogiBoard extends JFXApp {
   def cellObj(komaOpt: Option[Koma], index: Int): Group = {
 
     //仮にsellIndexが存在する場合はLightBlue色、そうでない場合は、Burlywood色で塗り潰す
-    val fillColor = if (selectedCellIndex.contains(index) && clickedKomaFlag!= "NonTarget" ) LightBlue else Burlywood
+    val fillColor = if (selectedCellIndex.contains(index) && clickedKomaFlag != "NonTarget" ) LightBlue else Burlywood
 
     val grid = {
       val rect = Rectangle(80, 80, fillColor)
       rect.setStroke(Black)
       rect
     }
-
-    /** clickedAtと一致した場合の駒情報を取得する */
-    val clickedAt = if (selectedCellIndex != None) { selectedCellIndex.get }
-    val clickedKoma = if (komaOpt != None) { if (komaOpt.get.index == clickedAt) { komaOpt.get.kind } } else { "noneKoma" }
-    val isSenteKoma = if (komaOpt != None) { if (komaOpt.get.index == clickedAt) { komaOpt.get.isSente } } else { "noneKoma" }
 
     //先後表示のためのインスタンス化の切り分け
     val group = komaOpt match {
@@ -96,8 +88,11 @@ object ShogiBoard extends JFXApp {
       case None => new Group { children = List(Some(grid), komaOpt.map(senteKomaObj)).flatten }
     }
 
-    /** boardに、selectedCellIndex(選択したセルのIndex)をboard変数に移動させ、repaint関数で 再描画する */
+    /** clickedAtと一致した場合の駒情報を取得する */
+    val clickedKoma = if (komaOpt != None) { if (komaOpt.get.index == index) { komaOpt.get.kind } } else { "noneKoma" }
+    val isSenteKoma = if (komaOpt != None) { if (komaOpt.get.index == index) { komaOpt.get.isSente } } else { "noneKoma" }
 
+    /** boardに、selectedCellIndex(選択したセルのIndex)をboard変数に移動させ、repaint関数で 再描画する */
     if (selectedCellIndex != None) { /** クリックされてる場合 */
       val existSelectedCellIndex = selectedCellIndex.get
 
@@ -113,7 +108,7 @@ object ShogiBoard extends JFXApp {
               sengoKomaFlag = "NonFlag"
               board = board.moveKoma(num, index)
               nextTurn = "Gote"
-              //todo おそらく、成りが後から書かれた後手の駒方に上書きされている
+              //todo 成りの結果が、後から書かれている後手の駒に上書きされている(おそらく)
               if (index /9 < 3) board = board.nariKoma(index, nariGoma)
             }
             def gotePlayAndInitializeAndNari(nariGoma: String) = {
@@ -139,243 +134,221 @@ object ShogiBoard extends JFXApp {
               nextTurn = "Sente"
             }
             def senteKomaBranch(koma: String): Boolean = {
-              (clickedKoma == koma || clickedKomaFlag == koma) &&
+              ((clickedKoma == koma && clickedKomaFlag == "NonTarget") || clickedKomaFlag == koma) &&
               (isSenteKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente"
             }
             def goteKomaBranch(koma: String): Boolean = {
-              (clickedKoma == koma || clickedKomaFlag == koma) &&
+              ((clickedKoma == koma && clickedKomaFlag == "NonTarget") || clickedKomaFlag == koma) &&
               (isSenteKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote"
             }
+            def addFlag(komaKind: String, komaOwner: String) = { //使って書き直すかも
+              clickedKomaFlag = komaKind
+              sengoKomaFlag = komaOwner
+            }
+            def clickCancel = {
+              selectedCellIndex = None
+              clickedKomaFlag = "NonTarget"
+            }
 
-            //デバッグ用
+            // デバッグ用
             println("clickedKoma:"+clickedKoma,"clickedKomaFlag:"+clickedKomaFlag,"isSenteKoma:"+isSenteKoma,"senteKomaFlag:"+sengoKomaFlag)
-            println("nextTurn:"+nextTurn)
-            println("clickedAt:"+clickedAt, "selectedCellIndex:"+selectedCellIndex)
+            println("selectedCellIndex:"+selectedCellIndex,"nextTurn:"+nextTurn)
 
             //行き先をクリックした時点では、すでに駒と認識できなくなっている
             if ( senteKomaBranch("歩") ) { /** 先手の歩の場合 */
-              clickedKomaFlag = "歩" /** クリックした時に一度入ったというフラグを用意 */
-              sengoKomaFlag = "先手"
+              addFlag("歩","先手") /** クリックした時に一度入ったというフラグを用意 */
               if (moveDistance == 9) { //駒の移動条件を満たしていて、移動先に駒がない場合に、移動できる
                 if (isSenteKoma != true) { sentePlayAndInitializeAndNari("と") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("歩") ) { /** 後手の歩の場合 */
-              clickedKomaFlag = "歩"
-              sengoKomaFlag = "後手"
+              addFlag("歩","後手")
               if (moveDistance == -9) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("と") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
-            else if ( senteKomaBranch("香") ) { /** 先手の香車の場合 */
-              clickedKomaFlag = "香"
-              sengoKomaFlag = "先手"
+            else if ( senteKomaBranch("香") ) {
+              /** 先手の香車の場合 */
+              addFlag("香", "先手")
               if (moveDistance % 9 == 0 && moveDistance > 0 && board.upJumpCheck(num, index)) {
                 if (isSenteKoma != true) { sentePlayAndInitializeAndNari("杏") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("香") ) { /** 後手の香車の場合 */
-              clickedKomaFlag = "香"
-              sengoKomaFlag = "後手"
+              addFlag("香","後手")
               if (moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, index)) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("杏") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("桂") ) { /** 先手の桂馬の場合 */
-              clickedKomaFlag = "桂"
-              sengoKomaFlag = "先手"
+              addFlag("桂","先手")
               if (moveDistance == 17 || moveDistance == 19) {
                 if (isSenteKoma != true) { sentePlayAndInitializeAndNari("圭") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("桂") ) { /** 後手の桂馬の場合 */
-              clickedKomaFlag = "桂"
-              sengoKomaFlag = "後手"
+              addFlag("桂","後手")
               if (moveDistance == -17 || moveDistance == -19) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("圭") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("銀") ) { /** 先手の銀の場合 */
-              clickedKomaFlag = "銀"
-              sengoKomaFlag = "先手"
+              addFlag("銀","先手")
               if (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) {
                 if (isSenteKoma != true) { sentePlayAndInitializeAndNari("全") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("銀") ) { /** 後手の銀の場合 */
-              clickedKomaFlag = "銀"
-              sengoKomaFlag = "後手"
+              addFlag("銀","後手")
               if (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("全") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("金") ) { /** 先手の金の場合 */
-              clickedKomaFlag = "金"
-              sengoKomaFlag = "先手"
+              addFlag("金","先手")
               if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize } //以下、飛車角以外は成りがない関数を使う
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("金") ) { /** 後手の金の場合 */
-              clickedKomaFlag = "金"
-              sengoKomaFlag = "後手"
+              addFlag("金","後手")
               if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) { //後手駒
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("王") ) { /** 先手の王の場合 */
-              clickedKomaFlag = "王"
-              sengoKomaFlag = "先手"
+              addFlag("王","先手")
               if (absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("王") ) { /** 後手の金の場合 */
-              clickedKomaFlag = "王"
-              sengoKomaFlag = "後手"
+              addFlag("王","後手")
               if (absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("角") ) { /** 先手の角の場合 */
-              clickedKomaFlag = "角"
-              sengoKomaFlag = "先手"
+              addFlag("角","先手")
               if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上から右下方向
                 || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) { //右上から左下方向
-                if (isSenteKoma != true) { sentePlayAndInitializeAndNari("馬") }
-              }
+                if (isSenteKoma != true) {
+                  sentePlayAndInitializeAndNari("馬")
+                }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("角") ) { /** 後手の角の場合 */
-              clickedKomaFlag = "角"
-              sengoKomaFlag = "後手"
+              addFlag("角","後手")
               if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index))
                 || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) {
-                if (isSenteKoma != false) { gotePlayAndInitializeAndNari("馬") }
-              }
+                if (isSenteKoma != false) {
+                  gotePlayAndInitializeAndNari("馬")
+                }
+              } else if (moveDistance != 0) clickCancel
             }
 
             else if ( senteKomaBranch("飛") ) { /** 先手の飛車の場合 */
-              clickedKomaFlag = "飛"
-              sengoKomaFlag = "先手"
+              addFlag("飛","先手")
               if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
                 || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
               ) {
                 if (isSenteKoma != true) { sentePlayAndInitializeAndNari("龍") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("飛") ) { /** 後手の飛車の場合 */
-              clickedKomaFlag = "飛"
-              sengoKomaFlag = "後手"
+              addFlag("飛","後手")
               if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
                 || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
               ) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("龍") }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             /** 成り駒 */
             else if ( senteKomaBranch("と") ) { /** 先手のとの場合 */
-              clickedKomaFlag = "と"
-              sengoKomaFlag = "先手"
-              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) { //先手駒
+              addFlag("と","先手")
+              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("と") ) { /** 後手のとの場合 */
-              clickedKomaFlag = "と"
-              sengoKomaFlag = "後手"
-              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) { //後手駒
+              addFlag("と","後手")
+              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) {
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( senteKomaBranch("杏") ) { /** 先手の成香の場合 */
-              clickedKomaFlag = "杏"
-              sengoKomaFlag = "先手"
-              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) { //先手駒
+              addFlag("杏","先手")
+              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("杏") ) { /** 後手の成香の場合 */
-              clickedKomaFlag = "杏"
-              sengoKomaFlag = "後手"
-              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) { //後手駒
+              addFlag("杏","後手")
+              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) {
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( senteKomaBranch("圭") ) { /** 先手の成桂の場合 */
-              clickedKomaFlag = "圭"
-              sengoKomaFlag = "先手"
-              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) { //先手駒
+              addFlag("圭","先手")
+              if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("圭") ) { /** 後手の成桂の場合 */
-              clickedKomaFlag = "圭"
-              sengoKomaFlag = "後手"
+              addFlag("圭","後手")
               if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) { //後手駒
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( senteKomaBranch("全") ) { /** 先手の成銀の場合 */
-              clickedKomaFlag = "全"
-              sengoKomaFlag = "先手"
+              addFlag("全","先手")
               if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) { //先手駒
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("全") ) { /** 後手の成銀の場合 */
-              clickedKomaFlag = "全"
-              sengoKomaFlag = "後手"
+              addFlag("全","後手")
               if (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) { //後手駒
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( senteKomaBranch("馬") ) { /** 先手の馬の場合 */
-              clickedKomaFlag = "馬"
-              sengoKomaFlag = "先手"
+              addFlag("馬","先手")
               if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上~右下
                 || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) //左下~右上
                 || absMoveDistance == 1 || absMoveDistance == 9) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("馬") ) { /** 後手の馬の場合 */
-              clickedKomaFlag = "馬"
-              sengoKomaFlag = "後手"
+              addFlag("馬","後手")
               if ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, index) && board.rightDownJumpCheck(num, index)) //左上~右下
                 || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, index) && board.leftDownJumpCheck(num, index)) //左下~右上
                 || absMoveDistance == 1 || absMoveDistance == 9) {
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( senteKomaBranch("龍") ) { /** 先手の龍の場合 */
-              clickedKomaFlag = "龍"
-              sengoKomaFlag = "先手"
+              addFlag("龍","先手")
               if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
                 || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
                 || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
                 if (isSenteKoma != true) { sentePlayAndInitialize }
-              }
+              } else if (moveDistance != 0) clickCancel
             }
             else if ( goteKomaBranch("龍") ) { /** 後手の龍の場合 */
-              clickedKomaFlag = "龍"
-              sengoKomaFlag = "後手"
+              addFlag("龍","後手")
               if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
                 || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
                 || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) {
                 if (isSenteKoma != false) { gotePlayAndInitialize }
-              }
-            }
-
-            /** どの場面にも該当しない場合は、選択を外す */
-            else {
-              selectedCellIndex = None
-              println("selectedCellIndexCancelled")
+              } else if (moveDistance != 0) clickCancel
             }
 
           }
@@ -384,6 +357,7 @@ object ShogiBoard extends JFXApp {
         repaint //再描画関数(一番下で定義する)
       })
       group
+
     } else { /** クリックされない場合 */
       group.setOnMouseClicked(e => {
         selectedCellIndex match {
