@@ -1,6 +1,6 @@
 package com.atsfour.shogiai
 
-case class Koma(kind: String, index: Int, isSente: Boolean) {
+case class Koma(kind: String, index: Int, isSente: Boolean, onBoard: Boolean) {
   val xPos = index % 9
   val yPos = index / 9
 

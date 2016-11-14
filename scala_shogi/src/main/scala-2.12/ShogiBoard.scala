@@ -1,4 +1,4 @@
-import com.atsfour.shogiai.{Koma, Board}
+import com.atsfour.shogiai._
 
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
@@ -10,25 +10,32 @@ import scalafx.scene.paint.Color._
 import scalafx.scene.shape.{Polygon, Rectangle}
 
 /* やること
-todo 1.持ち駒を定義する
-todo 2.相手の駒を取れるようにする
-todo 3.持ち駒を打てる
-todo 4.駒の成り不成の選択
+todo 1.相手の駒を取れるようにする
+todo 2.持ち駒を打てる
+todo 3.駒の成り不成の選択
 */
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
+
+  //持ち駒の場合、ここにルールを設定して置いておくようにしたい
   var board: Board = Board(List( //Koma("歩", 0, false)
-    Koma("歩", 18, false), Koma("歩", 19, false), Koma("歩", 20, false), Koma("歩", 21, false), Koma("歩", 22, false),
-    Koma("歩", 23, false), Koma("歩", 24, false), Koma("歩", 25, false), Koma("歩", 26, false),
-    Koma("香", 0, false), Koma("桂", 1, false), Koma("銀", 2, false), Koma("金", 3, false), Koma("王", 4, false),
-    Koma("香", 8, false), Koma("桂", 7, false), Koma("銀", 6, false), Koma("金", 5, false),
-    Koma("飛", 10, false), Koma("角", 16, false), Koma("飛", 70, true), Koma("角", 64, true),
-    Koma("香", 80, true), Koma("桂", 79, true), Koma("銀", 78, true), Koma("金", 77, true), Koma("王", 76, true),
-    Koma("香", 72, true), Koma("桂", 73, true), Koma("銀", 74, true), Koma("金", 75, true),
-    Koma("歩", 62, true), Koma("歩", 61, true), Koma("歩", 60, true), Koma("歩", 59, true), Koma("歩", 58, true),
-    Koma("歩", 57, true), Koma("歩", 56, true), Koma("歩", 55, true), Koma("歩", 54, true)
+    Koma("歩", 18, false, true), Koma("歩", 19, false, true), Koma("歩", 20, false, true),
+    Koma("歩", 21, false, true), Koma("歩", 22, false, true), Koma("歩", 23, false, true),
+    Koma("歩", 24, false, true), Koma("歩", 25, false, true), Koma("歩", 26, false, true),
+    Koma("香", 0, false, true), Koma("桂", 1, false, true),
+    Koma("銀", 2, false, true), Koma("金", 3, false, true), Koma("王", 4, false, true),
+    Koma("香", 8, false, true), Koma("桂", 7, false, true), Koma("銀", 6, false, true), Koma("金", 5, false, true),
+    Koma("飛", 10, false, true), Koma("角", 16, false, true), Koma("飛", 70, true, true), Koma("角", 64, true, true),
+    Koma("香", 80, true, true), Koma("桂", 79, true, true),
+    Koma("銀", 78, true, true), Koma("金", 77, true, true), Koma("王", 76, true, true),
+    Koma("香", 72, true, true), Koma("桂", 73, true, true), Koma("銀", 74, true, true), Koma("金", 75, true, true),
+    Koma("歩", 62, true, true), Koma("歩", 61, true, true), Koma("歩", 60, true, true),
+    Koma("歩", 59, true, true), Koma("歩", 58, true, true), Koma("歩", 57, true, true),
+    Koma("歩", 56, true, true), Koma("歩", 55, true, true), Koma("歩", 54, true, true),
+    Koma("歩", 130, true, false), Koma("歩", 131, true, false), Koma("歩", 82, false, false)
   ))
+
   var selectedCellIndex: Option[Int] = None //複雑さを抑えるため、Noncellに変えたい・・
   var clickedKomaFlag: String = "NonTarget"
   var sengoKomaFlag: String = "NonFlag"
@@ -45,21 +52,25 @@ object ShogiBoard extends JFXApp {
   /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
   stage = new JFXApp.PrimaryStage {
     title.value = "Hello Scala Shogi"
-    width = 800
+    width = 1850
     height = 800
     scene = boardScene
   }
 
-  /** content = boardObj(board)としている
-    * GridPaneクラスをインスタンス化して返す関数
-    * boardクラスのcellsを使って定義されている */
   def boardObj(board: Board) = {
     val pane = new GridPane
-    board.cells.zipWithIndex.foreach { //81回繰り返される
+    board.cells.zipWithIndex.foreach { /** 盤面, cellsを81回呼んでいる */
       case (optKoma, index) => {
-        val x = index % 9
-        val y = index / 9
-        pane.add(cellObj(optKoma, index), x, y) //ここでdef cellObjが81回呼ばれる
+        if (index <= 80) {
+          val x = index % 9
+          val y = index / 9
+          pane.add(cellObj(optKoma, index), x, y)
+        }
+        if (index >= 81 && index <= 134) { /** 持ち駒を置く場所を確保 */
+          val x = (index - 81) % 6 + 10
+          val y = (index - 81) / 6
+          pane.add(cellObj(optKoma, index), x, y) //負の座標は.addできない
+        }
       }
     }
     pane
@@ -69,11 +80,19 @@ object ShogiBoard extends JFXApp {
   def cellObj(komaOpt: Option[Koma], index: Int): Group = {
 
     //仮にsellIndexが存在する場合はLightBlue色、そうでない場合は、Burlywood色で塗り潰す
-    val fillColor = if (selectedCellIndex.contains(index) && clickedKomaFlag != "NonTarget" ) LightBlue else Burlywood
+    val fillColor = if (selectedCellIndex.contains(index) && clickedKomaFlag != "NonTarget" ) {
+      LightBlue
+    } else if (index <= 80 //盤面
+      || ((index >= 81 && index <= 134) && (index-81) % 6 != 0 && (index-81) / 6 != 4) //持ち駒
+    ){ //色をつける場所を指定
+      Burlywood
+    } else White
 
     val grid = {
       val rect = Rectangle(80, 80, fillColor)
-      rect.setStroke(Black)
+      if (index <= 80 //盤面
+        || ((index >= 81 && index <= 134) && (index-81) % 6 != 0 && (index-81) / 6 != 4) //持ち駒
+      ){ rect.setStroke(Black) }
       rect
     }
 
@@ -101,7 +120,7 @@ object ShogiBoard extends JFXApp {
           case Some(num) => { /** 各々の駒の動く条件に一致する場合はindexへ移動させる */
             val absMoveDistance = Math.abs(existSelectedCellIndex - index) //駒の移動距離の絶対値を定義
             val moveDistance = existSelectedCellIndex - index //駒の移動距離を定義
-            //先手後手に
+            /**todo ここら辺のdefは、Koma,Boardクラスに移動できるかも */
             def sentePlayAndInitializeAndNari(nariGoma: String) = {
               selectedCellIndex = None
               clickedKomaFlag = "NonTarget"
@@ -263,9 +282,8 @@ object ShogiBoard extends JFXApp {
             }
             else if ( goteKomaBranch("飛") ) { /** 後手の飛車の場合 */
               addFlag("飛","後手")
-              if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index)) //縦(上下)方向
-                || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index)) //横方向
-              ) {
+              if (( absMoveDistance % 9 == 0 && board.upJumpCheck(num, index) && board.downJumpCheck(num, index))
+                || (existSelectedCellIndex / 9 == index / 9 && board.rightJumpCheck(num, index) && board.leftJumpCheck(num, index))) {
                 if (isSenteKoma != false) { gotePlayAndInitializeAndNari("龍") }
               } else if (moveDistance != 0) clickCancel
             }

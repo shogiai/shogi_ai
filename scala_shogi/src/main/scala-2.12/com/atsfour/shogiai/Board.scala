@@ -1,7 +1,7 @@
 package com.atsfour.shogiai
 
 case class Board(komas: List[Koma]) {
-  val cellIndice = (0 until 81).toList  //場所は0~81の間で、List形式で取得
+  val cellIndice = (0 until 136).toList //0~136の場所を、List形式で取得
 
   /* 場所は0~81をList形式で取得したものから、komas.findし、今の場所を取得する */
   val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
