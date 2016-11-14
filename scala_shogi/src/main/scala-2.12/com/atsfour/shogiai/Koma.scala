@@ -8,6 +8,9 @@ case class Koma(kind: String, index: Int, isSente: Boolean, onBoard: Boolean) {
   def getKoma(now: Int): Koma = this  //場所を指定した時、その駒型を見つける関数
   def find(now: Int): String = this.kind  //場所を指定した時、駒を見つける関数
 
+  def reverse(boolean: Boolean):Boolean = if (boolean) {false} else {true}
+  def change(isSente: Boolean): Koma = this.copy(isSente = reverse(isSente))  //駒の所有権を変える関数
+
   def move(to: Int): Koma = this.copy(index = to)  //駒が動く関数
   def nari(nariKoma: String): Koma = this.copy(kind = nariKoma) //駒が成る関数
 }

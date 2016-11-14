@@ -6,6 +6,15 @@ case class Board(komas: List[Koma]) {
   /* 場所は0~81をList形式で取得したものから、komas.findし、今の場所を取得する */
   val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
+  //indexを指定した時、そこにある駒を返す関数
+  def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
+
+  //駒が取られた時の所有権の変更
+  def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.change(isSente)))
+    case None => this
+  }
+
   //駒の移動
   def moveKoma(from: Int, to: Int): Board = komas.zipWithIndex.find(_._1.index == from) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.move(to)))
@@ -13,8 +22,28 @@ case class Board(komas: List[Koma]) {
   }
 
   //成り駒を作る
-  def nariKoma(to: Int, nariKoma: String): Board = komas.zipWithIndex.find(_._1.index == to) match {
+  def nariKoma(place: Int, nariKoma: String): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.nari(nariKoma)))
+    case None => this
+  }
+
+  //Koma(kind, index, isSente, onBoard)
+  def returnNariKoma(place: Int): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((Koma("と", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("と", index, isSente, onBoard).nari("歩")))
+    case Some((Koma("杏", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("杏", index, isSente, onBoard).nari("香")))
+    case Some((Koma("圭", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("圭", index, isSente, onBoard).nari("桂")))
+    case Some((Koma("全", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("全", index, isSente, onBoard).nari("銀")))
+    case Some((Koma("馬", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("馬", index, isSente, onBoard).nari("角")))
+    case Some((Koma("龍", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("龍", index, isSente, onBoard).nari("飛")))
+    case Some((Koma("王", index, true, onBoard), i)) => {
+      println("後手の勝ち")
+      Board(komas.updated(i, Koma("王", index, true, onBoard).nari("王")))
+    }
+    case Some((Koma("王", index, false, onBoard), i)) => {
+      println("先手の勝ち")
+      Board(komas.updated(i, Koma("王", index, false, onBoard).nari("王")))
+    }
+    case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
   }
 
