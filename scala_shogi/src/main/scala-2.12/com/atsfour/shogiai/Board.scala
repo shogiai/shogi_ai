@@ -11,9 +11,16 @@ case class Board(komas: List[Koma]) {
 
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.change(isSente)))
+    case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
     case None => this
   }
+
+  //駒が取られた、打った時の所有権の変更
+  def spaceChangeKoma(place: Int, onBoard: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.spaceChange(onBoard)))
+    case None => this
+  }
+
 
   //駒の移動
   def moveKoma(from: Int, to: Int): Board = komas.zipWithIndex.find(_._1.index == from) match {
@@ -48,13 +55,17 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 歩を打つときの二歩チェック */
-  def nifuCheck(now: Int): Boolean = {
+  case class NifuCheck(kind: String, isSente: Boolean, onBoard: Boolean)
+  def nifuCheck(now: Int, isSente:Boolean): Boolean = {
     var check = true
     val suji = now % 9
-    for (dan <- 0 until 8) {
+    for (dan <- 0 until 8) { //(Koma(kind, index, isSente, onBoard)
       val line = 9 * dan + suji
-      val koma: Koma = komas.zipWithIndex.find(_._1.index == line) match { case Some((koma, i)) => koma }
-      if (koma.find(line) == "歩") check = false
+      val koma: Option[NifuCheck] = komas.zipWithIndex.find(_._1.index == line) match {
+        case Some((Koma(kind, index, isSente, onBoard), i)) => Some(NifuCheck(kind, isSente, onBoard))
+        case None => None
+      }
+      if (koma == Some(NifuCheck("歩",isSente,true))) check = false
     }
     check
   }
