@@ -1,38 +1,36 @@
 package com.atsfour.shogiai
 
-import scala.collection.mutable.ListBuffer
-
-//komasをArrayにしにて、盤をSetするような方針
-case class Board(komas: ListBuffer[Koma]) {
-  val cellIndice = (0 until 136).toArray //0~136の場所を、List形式で取得
+case class Board(komas: List[Koma]) {
+  val cellIndice = (0 until 136).toList //0~136の場所を、List形式で取得
 
   /* 場所は0~81をList形式で取得したものから、komas.findし、今の場所を取得する */
-  val cells: Array[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
+  val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
   //駒が取られた時の所有権の変更
-  def ownerChangeKoma(place: Int, isSente: Boolean) = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => komas(i) = koma.ownerChange(isSente)
+  def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
     case None => this
   }
 
   //駒が取られた、打った時の所有権の変更
-  def spaceChangeKoma(place: Int, onBoard: Boolean) = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => komas(i) = koma.spaceChange(onBoard) //Board(komas.updated(i, koma.spaceChange(onBoard)))
+  def spaceChangeKoma(place: Int, onBoard: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.spaceChange(onBoard)))
     case None => this
   }
 
+
   //駒の移動
-  def moveKoma(from: Int, to: Int) = komas.zipWithIndex.find(_._1.index == from) match {
-    case Some((koma, i)) => komas(i) = koma.move(to)//Board(komas.updated(i, koma.move(to)))
+  def moveKoma(from: Int, to: Int): Board = komas.zipWithIndex.find(_._1.index == from) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.move(to)))
     case None => this
   }
 
   //成り駒を作る
-  def nariKoma(place: Int, nariKoma: String) = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => komas(i) = koma.nari(nariKoma) //(komas.updated(i, koma.nari(nariKoma)))
+  def nariKoma(place: Int, nariKoma: String): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => Board(komas.updated(i, koma.nari(nariKoma)))
     case None => this
   }
 
@@ -62,7 +60,7 @@ case class Board(komas: ListBuffer[Koma]) {
     var check = true
     val suji = now % 9
     for (dan <- 0 until 8) { //(Koma(kind, index, isSente, onBoard)
-      val line = 9 * dan + suji
+    val line = 9 * dan + suji
       val koma: Option[NifuCheck] = komas.zipWithIndex.find(_._1.index == line) match {
         case Some((Koma(kind, index, isSente, onBoard), i)) => Some(NifuCheck(kind, isSente, onBoard))
         case None => None
@@ -79,7 +77,7 @@ case class Board(komas: ListBuffer[Koma]) {
 
     if (nowDan != 0) { //0段目のとき、上側に移動できない
       for (posibbleDan <- 0 until nowDan - 1) { //減少していく表記はできない
-        val line = 9 * ((nowDan - 1) - posibbleDan) + suji
+      val line = 9 * ((nowDan - 1) - posibbleDan) + suji
         val koma: Option[Koma] = komas.zipWithIndex.find(_._1.index == line) match {
           case Some((koma, i)) => Option(koma)
           case None => None
@@ -131,7 +129,7 @@ case class Board(komas: ListBuffer[Koma]) {
 
     if (nowSuji != 0) { //0筋目のとき、左側へは移動できない
       for (posibbleSuji <- 0 until nowSuji - 1) { //減少していく表記はできない
-        val line = 9 * dan + ((nowSuji - 1) - posibbleSuji)
+      val line = 9 * dan + ((nowSuji - 1) - posibbleSuji)
         val koma: Option[Koma] = komas.zipWithIndex.find(_._1.index == line) match {
           case Some((koma, i)) => Option(koma)
           case None => None
