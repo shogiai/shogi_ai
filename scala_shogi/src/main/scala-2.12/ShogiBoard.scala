@@ -17,7 +17,7 @@ todo 駒の成り不成の選択
 object ShogiBoard extends JFXApp {
 
   //持ち駒の場合、ここにルールを設定して置いておくようにしたい
-  var board: Board = Board(List( //Koma("歩", 0, false)
+  var board: Board = Board(List(
     Koma("歩", 18, false, true), Koma("歩", 19, false, true), Koma("歩", 20, false, true),
     Koma("歩", 21, false, true), Koma("歩", 22, false, true), Koma("歩", 23, false, true),
     Koma("歩", 24, false, true), Koma("歩", 25, false, true), Koma("歩", 26, false, true),
@@ -34,11 +34,11 @@ object ShogiBoard extends JFXApp {
     Koma("角", 120, true, false), Koma("歩", 131, true, false), Koma("歩", 82, false, false), Koma("飛", 83, false, false)
   ))
 
-  var selectedCellIndex: Option[Int] = None //複雑さを抑えるため、Noncellに変えたい・・
+  var selectedCellIndex: Option[Int] = None
   var clickedKomaFlag: String = "NonTarget"
   var sengoKomaFlag: String = "NonFlag"
   var onBoardKomaFlag: String = "NonFlag"
-  var nextTurn: String = "Sente"
+  var nextTurnFlag: String = "Sente"
 
   /* `boardScene` という変数は、Sceneクラスをインスタンス化したもの
   `content` は、Sceneクラスの関数 `content = boardObj(board)`
@@ -97,8 +97,8 @@ object ShogiBoard extends JFXApp {
 
     //先後表示のためのインスタンス化の切り分け
     val group = komaOpt match {
-      case Some(num) => {
-        komaOpt.get.isSente match {
+      case Some(koma) => {
+        koma.isSente match {
           case true => new Group { children = List(Some(grid), komaOpt.map(senteKomaObj)).flatten }
           case false => new Group { children = List(Some(grid), komaOpt.map(goteKomaObj)).flatten }
         }
@@ -110,33 +110,36 @@ object ShogiBoard extends JFXApp {
     /** 駒をクリックした時に使う関数のまとまり */
 
     //clickedIndexと一致した場合の駒情報を取得する
-    val clickedKoma: String = {
-      var kind = ""
-      if (komaOpt != None) {
-        if (komaOpt.get.index == clickedIndex) { kind = komaOpt.get.kind }
-        kind
-      } else "noneKoma"
+    val clickedKoma: String = komaOpt match {
+        case Some(koma) => koma.kind
+        case None => "noneKoma"
     }
-    //困ったら直す
-    val isSenteKoma = if (komaOpt != None) { if (komaOpt.get.index == clickedIndex) { komaOpt.get.isSente } } else { "noneKoma" }
-    val isOnBoardKoma = if (komaOpt != None) { if (komaOpt.get.index == clickedIndex) { komaOpt.get.onBoard } } else { "noneKoma" }
+    val isSenteKoma = komaOpt match {
+        case Some(koma) => koma.isSente
+        case None => "noneKoma"
+    }
+    val isOnBoardKoma = komaOpt match {
+      case Some(koma) => koma.onBoard
+      case None => "noneKoma"
+    }
+    //val isOnBoardKoma: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
 
     def senteHandKomaBranch: Boolean = {
       ((isOnBoardKoma == false && clickedKomaFlag == "NonTarget") || onBoardKomaFlag == "持ち駒" ) &&
-        (isSenteKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente" && onBoardKomaFlag != "盤上"
+        (isSenteKoma == true || sengoKomaFlag == "先手") && nextTurnFlag == "Sente" && onBoardKomaFlag != "盤上"
     }
     def goteHandKomaBranch: Boolean = {
       ((isOnBoardKoma == false && clickedKomaFlag == "NonTarget") || onBoardKomaFlag == "持ち駒") &&
-        (isSenteKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote" && onBoardKomaFlag != "盤上"
+        (isSenteKoma == false || sengoKomaFlag == "後手") && nextTurnFlag == "Gote" && onBoardKomaFlag != "盤上"
     }
 
     def senteKomaBranch(koma: String): Boolean = {
       ((clickedKoma == koma && clickedKomaFlag == "NonTarget") || clickedKomaFlag == koma) &&
-        (isSenteKoma == true || sengoKomaFlag == "先手") && nextTurn == "Sente" && onBoardKomaFlag != "持ち駒"
+        (isSenteKoma == true || sengoKomaFlag == "先手") && nextTurnFlag == "Sente" && onBoardKomaFlag != "持ち駒"
     }
     def goteKomaBranch(koma: String): Boolean = {
       ((clickedKoma == koma && clickedKomaFlag == "NonTarget") || clickedKomaFlag == koma) &&
-        (isSenteKoma == false || sengoKomaFlag == "後手") && nextTurn == "Gote" && onBoardKomaFlag != "持ち駒"
+        (isSenteKoma == false || sengoKomaFlag == "後手") && nextTurnFlag == "Gote" && onBoardKomaFlag != "持ち駒"
     }
 
     //todo この設計のせいで分岐が増えている, 工夫をした方がいい
@@ -155,11 +158,11 @@ object ShogiBoard extends JFXApp {
     //持ち駒をどこに置くかを決める, 持ち駒をソートする機能があると見栄えが良い
     def handMove: Int = {
       var (handPlace,count) = (108, 0)
-      if (nextTurn == "Sente") {
+      if (nextTurnFlag == "Sente") {
         for (handsPlace <- 111 until 135) {
           if (board.findKoma(handsPlace) == None && (handsPlace - 81) % 6 != 0 ) handPlace = handsPlace
         }
-      } else if (nextTurn == "Gote") {
+      } else if (nextTurnFlag == "Gote") {
         for (handsPlace <- 81 until 105) {
           if (board.findKoma(handsPlace) == None && (handsPlace - 81) % 6 != 0 && count == 0) {
             handPlace = handsPlace
@@ -171,8 +174,8 @@ object ShogiBoard extends JFXApp {
     }
     def takeKoma(clickedIndex: Int) = { //駒を取った時に行う処理の集まり
       board = board.returnNariKoma(clickedIndex)
-      if (nextTurn == "Sente") board = board.ownerChangeKoma(clickedIndex, false)
-      else if (nextTurn == "Gote") board = board.ownerChangeKoma(clickedIndex, true)
+      if (nextTurnFlag == "Sente") board = board.ownerChangeKoma(clickedIndex, false)
+      else if (nextTurnFlag == "Gote") board = board.ownerChangeKoma(clickedIndex, true)
       board = board.spaceChangeKoma(clickedIndex, true) //取られた駒は持ち駒になる
       board = board.moveKoma(clickedIndex, handMove)
     }
@@ -182,8 +185,8 @@ object ShogiBoard extends JFXApp {
 
     def canNari(num: Int): Boolean = {
       var canNari: Boolean = false
-      if (nextTurn == "Sente") { canNari = ((clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3 ) } //3段目以内にいる、もしくは3段目以内に入った
-      else if(nextTurn == "Gote") { canNari = (((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7 ) }
+      if (nextTurnFlag == "Sente") { canNari = ((clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3 ) } //3段目以内にいる、もしくは3段目以内に入った
+      else if(nextTurnFlag == "Gote") { canNari = (((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7 ) }
       canNari
     }
 
@@ -193,7 +196,7 @@ object ShogiBoard extends JFXApp {
       sengoKomaFlag = "NonFlag"
       board = board.moveKoma(num, clickedIndex)
       if (canNari(num: Int)) board = board.nariKoma(clickedIndex, nariGoma)
-      nextTurn = switchTurn(nextTurn)
+      nextTurnFlag = switchTurn(nextTurnFlag)
       onBoardKomaFlag = "NonFlag"
     }
     def playAndInitialize(num: Int) = {
@@ -202,14 +205,14 @@ object ShogiBoard extends JFXApp {
       sengoKomaFlag = "NonFlag"
       board = board.moveKoma(num, clickedIndex)
       if (onBoardKomaFlag == "持ち駒") board = board.spaceChangeKoma(clickedIndex, false) //打ち終わった駒は盤上の駒になる
-      nextTurn = switchTurn(nextTurn)
+      nextTurnFlag = switchTurn(nextTurnFlag)
       onBoardKomaFlag = "NonFlag"
     }
     /** ここまで駒をクリックした時に使われる関数群 */
 
     /** boardに、selectedCellIndex(選択したセルのIndex)をboard変数に移動させ、repaint関数で 再描画する */
     if (selectedCellIndex != None) { /** クリックされてる場合 */
-      val existSelectedCellIndex = selectedCellIndex.get
+      val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
       val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
       val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
 
@@ -220,25 +223,29 @@ object ShogiBoard extends JFXApp {
 
               // デバッグ用
               println("clickedKoma:" + clickedKoma, "clickedKomaFlag:" + clickedKomaFlag, "isSenteKoma:" + isSenteKoma, "senteKomaFlag:" + sengoKomaFlag)
-              println("selectedCellIndex:" + selectedCellIndex, "nextTurn:" + nextTurn, "clickedIndex:" + clickedIndex)
+              println("selectedCellIndex:" + selectedCellIndex, "nextTurn:" + nextTurnFlag, "clickedIndex:" + clickedIndex)
               println("onBoardKomaFlag:" + onBoardKomaFlag, "isOnBoardKoma:" + isOnBoardKoma)
 
               if (senteHandKomaBranch) { /** 先手で持ち駒をクリックした、選択していた場合 */
+                println("持ち駒ゾーンに入った")
                 if (clickedIndex <= 80 && isSenteKoma == "noneKoma" &&
                   (((clickedKomaFlag == "歩" || clickedKomaFlag == "香") && (clickedIndex / 9) + 1 == 1) == false) && //先手の歩と香車は、1段目に打てない
                   ((clickedKomaFlag == "桂" && (clickedIndex / 9 + 1) <= 2) == false) && //先手の桂馬は、1段目と2段目に打てない
                   (clickedKomaFlag != "歩" || board.nifuCheck(clickedIndex, true))
                 ) {
+                  println("打てた")
                   playAndInitialize(num)
                 } else if (moveDistance != 0) clickCancel
                 if (isOnBoardKoma == false && clickedKomaFlag == "NonTarget") addFlag(clickedKoma, "先手", "持ち駒")
               }
               else if (goteHandKomaBranch) { /** 後手で持ち駒をクリックした、選択していた場合 */
+                println("後手の持ち駒ゾーンに入った")
                 if ( clickedIndex <= 80 && isSenteKoma == "noneKoma" &&
                   (((clickedKomaFlag == "歩" || clickedKomaFlag == "香") && (clickedIndex / 9) + 1 == 9) == false) && //先手の歩と香車は、1段目に打てない
                   (((clickedKomaFlag == "桂") && (clickedIndex / 9 + 1) >= 8) == false) && //先手の桂馬は、1段目と2段目に打てない
                   (clickedKomaFlag != "歩" || board.nifuCheck(clickedIndex, false))
                 ) {
+                  println("後手打てた")
                   playAndInitialize(num)
                 }
                 else if (moveDistance != 0) clickCancel
