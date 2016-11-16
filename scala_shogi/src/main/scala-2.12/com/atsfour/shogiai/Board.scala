@@ -1,36 +1,38 @@
 package com.atsfour.shogiai
 
-case class Board(komas: List[Koma]) {
-  val cellIndice = (0 until 136).toList //0~136の場所を、List形式で取得
+import scala.collection.mutable.ListBuffer
+
+//komasをArrayにしにて、盤をSetするような方針
+case class Board(komas: ListBuffer[Koma]) {
+  val cellIndice = (0 until 136).toArray //0~136の場所を、List形式で取得
 
   /* 場所は0~81をList形式で取得したものから、komas.findし、今の場所を取得する */
-  val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
+  val cells: Array[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
   //駒が取られた時の所有権の変更
-  def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
+  def ownerChangeKoma(place: Int, isSente: Boolean) = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => komas(i) = koma.ownerChange(isSente)
     case None => this
   }
 
   //駒が取られた、打った時の所有権の変更
-  def spaceChangeKoma(place: Int, onBoard: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.spaceChange(onBoard)))
+  def spaceChangeKoma(place: Int, onBoard: Boolean) = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => komas(i) = koma.spaceChange(onBoard) //Board(komas.updated(i, koma.spaceChange(onBoard)))
     case None => this
   }
 
-
   //駒の移動
-  def moveKoma(from: Int, to: Int): Board = komas.zipWithIndex.find(_._1.index == from) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.move(to)))
+  def moveKoma(from: Int, to: Int) = komas.zipWithIndex.find(_._1.index == from) match {
+    case Some((koma, i)) => komas(i) = koma.move(to)//Board(komas.updated(i, koma.move(to)))
     case None => this
   }
 
   //成り駒を作る
-  def nariKoma(place: Int, nariKoma: String): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.nari(nariKoma)))
+  def nariKoma(place: Int, nariKoma: String) = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((koma, i)) => komas(i) = koma.nari(nariKoma) //(komas.updated(i, koma.nari(nariKoma)))
     case None => this
   }
 

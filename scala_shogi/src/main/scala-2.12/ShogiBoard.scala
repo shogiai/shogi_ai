@@ -1,5 +1,6 @@
 import com.atsfour.shogiai._
 
+import scala.collection.mutable.ListBuffer
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
 import scalafx.scene.control.Label
@@ -16,8 +17,8 @@ todo 駒の成り不成の選択
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  //持ち駒の場合、ここにルールを設定して置いておくようにしたい
-  var board: Board = Board(List(
+  //Boardクラスの中で更新処理を書く
+  val board: Board = Board(ListBuffer(
     Koma("歩", 18, false, true), Koma("歩", 19, false, true), Koma("歩", 20, false, true),
     Koma("歩", 21, false, true), Koma("歩", 22, false, true), Koma("歩", 23, false, true),
     Koma("歩", 24, false, true), Koma("歩", 25, false, true), Koma("歩", 26, false, true),
@@ -43,18 +44,20 @@ object ShogiBoard extends JFXApp {
   /* `boardScene` という変数は、Sceneクラスをインスタンス化したもの
   `content` は、Sceneクラスの関数 `content = boardObj(board)`
   boardObj(board)は、 `def boardObj(board: Board) = {` を使っている */
-  val boardScene = new Scene {
+
+  //todo 更新した度にインスタンス化したい
+   val boardScene = new Scene { //初期描画以外インスタンス化しない
     fill = White
-    content = boardObj(board)
+    content = boardObj(board: Board)
   }
 
-  /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
   stage = new JFXApp.PrimaryStage {
     title.value = "Hello Scala Shogi"
     width = 1850
     height = 800
     scene = boardScene
   }
+  /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
 
   def boardObj(board: Board) = {
     val pane = new GridPane
@@ -173,29 +176,27 @@ object ShogiBoard extends JFXApp {
       handPlace
     }
     def takeKoma(clickedIndex: Int) = { //駒を取った時に行う処理の集まり
-      board = board.returnNariKoma(clickedIndex)
-      if (nextTurnFlag == "Sente") board = board.ownerChangeKoma(clickedIndex, false)
-      else if (nextTurnFlag == "Gote") board = board.ownerChangeKoma(clickedIndex, true)
-      board = board.spaceChangeKoma(clickedIndex, true) //取られた駒は持ち駒になる
-      board = board.moveKoma(clickedIndex, handMove)
+      board.returnNariKoma(clickedIndex)
+      if (nextTurnFlag == "Sente") board.ownerChangeKoma(clickedIndex, false)
+      else if (nextTurnFlag == "Gote") board.ownerChangeKoma(clickedIndex, true)
+      board.spaceChangeKoma(clickedIndex, true) //取られた駒は持ち駒になる
+      board.moveKoma(clickedIndex, handMove)
     }
 
     def toMoveBoard: Boolean = clickedIndex <= 80
     def switchTurn(nextTurn: String): String = if (nextTurn == "Sente") {"Gote"} else {"Sente"}
 
-    def canNari(num: Int): Boolean = {
-      var canNari: Boolean = false
-      if (nextTurnFlag == "Sente") { canNari = ((clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3 ) } //3段目以内にいる、もしくは3段目以内に入った
-      else if(nextTurnFlag == "Gote") { canNari = (((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7 ) }
-      canNari
+    def canNari(num: Int): Boolean = nextTurnFlag match {
+      case "Sente" => (clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3   //3段目以内にいる、もしくは3段目以内に入った
+      case "Gote" => ((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7
     }
 
     def playAndInitializeAndNari(nariGoma: String, num: Int) = {
       selectedCellIndex = None
       clickedKomaFlag = "NonTarget"
       sengoKomaFlag = "NonFlag"
-      board = board.moveKoma(num, clickedIndex)
-      if (canNari(num: Int)) board = board.nariKoma(clickedIndex, nariGoma)
+      board.moveKoma(num, clickedIndex)
+      if (canNari(num: Int)) board.nariKoma(clickedIndex, nariGoma)
       nextTurnFlag = switchTurn(nextTurnFlag)
       onBoardKomaFlag = "NonFlag"
     }
@@ -203,8 +204,8 @@ object ShogiBoard extends JFXApp {
       selectedCellIndex = None
       clickedKomaFlag = "NonTarget"
       sengoKomaFlag = "NonFlag"
-      board = board.moveKoma(num, clickedIndex)
-      if (onBoardKomaFlag == "持ち駒") board = board.spaceChangeKoma(clickedIndex, false) //打ち終わった駒は盤上の駒になる
+      board.moveKoma(num, clickedIndex)
+      if (onBoardKomaFlag == "持ち駒") board.spaceChangeKoma(clickedIndex, false) //打ち終わった駒は盤上の駒になる
       nextTurnFlag = switchTurn(nextTurnFlag)
       onBoardKomaFlag = "NonFlag"
     }
@@ -227,14 +228,15 @@ object ShogiBoard extends JFXApp {
               println("onBoardKomaFlag:" + onBoardKomaFlag, "isOnBoardKoma:" + isOnBoardKoma)
 
               if (senteHandKomaBranch) { /** 先手で持ち駒をクリックした、選択していた場合 */
-                println("持ち駒ゾーンに入った")
+
                 if (clickedIndex <= 80 && isSenteKoma == "noneKoma" &&
                   (((clickedKomaFlag == "歩" || clickedKomaFlag == "香") && (clickedIndex / 9) + 1 == 1) == false) && //先手の歩と香車は、1段目に打てない
                   ((clickedKomaFlag == "桂" && (clickedIndex / 9 + 1) <= 2) == false) && //先手の桂馬は、1段目と2段目に打てない
                   (clickedKomaFlag != "歩" || board.nifuCheck(clickedIndex, true))
                 ) {
-                  println("打てた")
+                  //println(board)
                   playAndInitialize(num)
+                  //println(board)
                 } else if (moveDistance != 0) clickCancel
                 if (isOnBoardKoma == false && clickedKomaFlag == "NonTarget") addFlag(clickedKoma, "先手", "持ち駒")
               }
@@ -479,7 +481,7 @@ object ShogiBoard extends JFXApp {
               }
 
           }
-          case None => selectedCellIndex = Some(clickedIndex)
+          //case None => selectedCellIndex = Some(clickedIndex)
         }
         repaint //再描画関数(一番下で定義)
       })
@@ -489,7 +491,7 @@ object ShogiBoard extends JFXApp {
       group.setOnMouseClicked(e => {
         selectedCellIndex match {
           case Some(num) => {
-            board = board.moveKoma(num, clickedIndex)
+            board.moveKoma(num, clickedIndex)
             selectedCellIndex = None
           }
           case None => selectedCellIndex = Some(clickedIndex)
@@ -547,6 +549,7 @@ object ShogiBoard extends JFXApp {
 
   def repaint: Unit = {
     boardScene.content = boardObj(board)
+    println(board) //<= 変わってる
   }
 
 }
