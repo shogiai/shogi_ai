@@ -1,6 +1,8 @@
 package com.atsfour.shogiai
 
-case class Koma(kind: String, index: Int, isSente: Boolean, onBoard: Boolean) {
+import ShogiBoard.ClickedKomaState
+
+case class Koma(kind: ClickedKomaState, index: Int, isSente: Boolean, onBoard: Boolean) {
   val xPos = index % 9
   val yPos = index / 9
 
@@ -10,5 +12,5 @@ case class Koma(kind: String, index: Int, isSente: Boolean, onBoard: Boolean) {
   def spaceChange(onBoard: Boolean): Koma = this.copy(onBoard = reverse(onBoard)) //駒が盤上か手持ちかの登録を変える関数
 
   def move(to: Int): Koma = this.copy(index = to)  //駒が動く関数
-  def nari(nariKoma: String): Koma = this.copy(kind = nariKoma) //駒が成る関数
+  def nari(nariKoma: ClickedKomaState): Koma = this.copy(kind = nariKoma) //駒が成る関数
 }

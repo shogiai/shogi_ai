@@ -1,5 +1,9 @@
 package com.atsfour.shogiai
 
+import ShogiBoard.{clickedKomaStates, ClickedKomaState}
+
+
+/** todo 棋譜を読み込めるように、将棋盤の表示形式を工夫したい */
 case class Board(komas: List[Koma]) {
   val cellIndice = (0 until 136).toList //0~136の場所を、List形式で取得
 
@@ -31,26 +35,26 @@ case class Board(komas: List[Koma]) {
   }
 
   //成り駒を作る
-  def nariKoma(place: Int, nariKoma: String): Board = komas.zipWithIndex.find(_._1.index == place) match {
+  def nariKoma(place: Int, nariKoma: ClickedKomaState): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.nari(nariKoma)))
     case None => this
   }
 
-  //Koma(kind, index, isSente, onBoard)
+  //成っていた駒が取られて持ち駒になるときは、再度成る前の状態に戻す
   def returnNariKoma(place: Int): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((Koma("と", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("と", index, isSente, onBoard).nari("歩")))
-    case Some((Koma("杏", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("杏", index, isSente, onBoard).nari("香")))
-    case Some((Koma("圭", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("圭", index, isSente, onBoard).nari("桂")))
-    case Some((Koma("全", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("全", index, isSente, onBoard).nari("銀")))
-    case Some((Koma("馬", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("馬", index, isSente, onBoard).nari("角")))
-    case Some((Koma("龍", index, isSente, onBoard), i)) => Board(komas.updated(i, Koma("龍", index, isSente, onBoard).nari("飛")))
-    case Some((Koma("王", index, true, onBoard), i)) => {
-      println("後手の勝ち")
-      Board(komas.updated(i, Koma("王", index, true, onBoard).nari("王")))
+    case Some((Koma(clickedKomaStates.To, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.To, index, isSente, onBoard).nari(clickedKomaStates.Fu)))
+    case Some((Koma(clickedKomaStates.NariKyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKyo, index, isSente, onBoard).nari(clickedKomaStates.Kyo)))
+    case Some((Koma(clickedKomaStates.NariKei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKei, index, isSente, onBoard).nari(clickedKomaStates.Kei)))
+    case Some((Koma(clickedKomaStates.NariGin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariGin, index, isSente, onBoard).nari(clickedKomaStates.Gin)))
+    case Some((Koma(clickedKomaStates.Uma, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Uma, index, isSente, onBoard).nari(clickedKomaStates.Kaku)))
+    case Some((Koma(clickedKomaStates.Ryu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Ryu, index, isSente, onBoard).nari(clickedKomaStates.Hisha)))
+    case Some((Koma(clickedKomaStates.Ou, index, true, onBoard), i)) => {
+      println("後手の勝ち") //todo scalaFXで描画
+      Board(komas.updated(i, Koma(clickedKomaStates.Ou, index, true, onBoard).nari(clickedKomaStates.Ou)))
     }
-    case Some((Koma("王", index, false, onBoard), i)) => {
+    case Some((Koma(clickedKomaStates.Ou, index, false, onBoard), i)) => {
       println("先手の勝ち")
-      Board(komas.updated(i, Koma("王", index, false, onBoard).nari("王")))
+      Board(komas.updated(i, Koma(clickedKomaStates.Ou, index, false, onBoard).nari(clickedKomaStates.Ou)))
     }
     case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
@@ -59,8 +63,7 @@ case class Board(komas: List[Koma]) {
   /** 歩を打つときの二歩チェック */
   case class NifuCheck(kind: String, isSente: Boolean, onBoard: Boolean)
   def nifuCheck(now: Int, isSenteInput: Boolean): Boolean = {
-    val dan = now % 9
-    komas.forall(koma => column(koma.index) != dan || koma.kind != "歩" || !koma.onBoard || koma.isSente != isSenteInput)
+    komas.forall(koma => column(koma.index) != column(now) || koma.kind != clickedKomaStates.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
   }
 
   /** 上にどれだけ動けるか */
