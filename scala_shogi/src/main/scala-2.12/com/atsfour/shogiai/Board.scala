@@ -2,12 +2,11 @@ package com.atsfour.shogiai
 
 import ShogiBoard.{clickedKomaStates, ClickedKomaState}
 
-
-/** todo 棋譜を読み込めるように、将棋盤の表示形式を工夫したい */
 case class Board(komas: List[Koma]) {
-  val cellIndice = (0 until 136).toList //0~136の場所を、List形式で取得
 
-  /* 場所は0~81をList形式で取得したものから、komas.findし、今の場所を取得する */
+  //todo 棋譜を読み込めるように、将棋盤の表示形式を工夫したい
+  /* 場所をList形式で取得したものから、komas.findし、今の場所を取得する */
+  val cellIndice = (0 until 136).toList
   val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
   def row(index: Int): Int = index / 9

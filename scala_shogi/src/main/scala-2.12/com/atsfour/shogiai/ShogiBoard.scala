@@ -21,7 +21,7 @@ object ShogiBoard extends JFXApp {
     Koma(clickedKomaStates.Fu, 24, false, true), Koma(clickedKomaStates.Fu, 25, false, true), Koma(clickedKomaStates.Fu, 26, false, true),
     Koma(clickedKomaStates.Kyo, 0, false, true), Koma(clickedKomaStates.Kei, 1, false, true),
     Koma(clickedKomaStates.Gin, 2, false, true), Koma(clickedKomaStates.Kin, 3, false, true), Koma(clickedKomaStates.Ou, 4, false, true),
-    Koma(clickedKomaStates.Kyo, 84, false, false), Koma(clickedKomaStates.Kei, 7, false, true), Koma(clickedKomaStates.Gin, 6, false, true), Koma(clickedKomaStates.Kin, 5, false, true),
+    Koma(clickedKomaStates.Kyo, 8, false, true), Koma(clickedKomaStates.Kei, 7, false, true), Koma(clickedKomaStates.Gin, 6, false, true), Koma(clickedKomaStates.Kin, 5, false, true),
     Koma(clickedKomaStates.Hisha, 10, false, true), Koma(clickedKomaStates.Kaku, 16, false, true), Koma(clickedKomaStates.Hisha, 70, true, true), Koma(clickedKomaStates.Kaku, 64, true, true),
     Koma(clickedKomaStates.Kyo, 80, true, true), Koma(clickedKomaStates.Kei, 79, true, true),
     Koma(clickedKomaStates.Gin, 78, true, true), Koma(clickedKomaStates.Kin, 77, true, true), Koma(clickedKomaStates.Ou, 76, true, true),
@@ -31,14 +31,14 @@ object ShogiBoard extends JFXApp {
     Koma(clickedKomaStates.Fu, 56, true, true), Koma(clickedKomaStates.Fu, 55, true, true), Koma(clickedKomaStates.Fu, 54, true, true)
   ))
 
-  //todo フラグを減らしたい
+  //todo Stateを減らしたい
   var selectedCellIndex: Option[Int] = None
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
   var isSenteTurnState: Boolean = true
 
   var clickedKomaKind: ClickedKomaState = clickedKomaStates.None
-  abstract class ClickedKomaState(val name: String) //String型になりうるものはEnumで型を作る
+  abstract class ClickedKomaState(val name: String)
   case object clickedKomaStates {
     case object None extends ClickedKomaState("？")
     case object Fu extends ClickedKomaState("歩")
@@ -58,8 +58,6 @@ object ShogiBoard extends JFXApp {
 
     lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu)
   }
-
-  clickedKomaStates.Fu
 
   /* `boardScene` という変数は、Sceneクラスをインスタンス化したもの
   `content` は、Sceneクラスの関数 `content = boardObj(board)`
@@ -99,13 +97,11 @@ object ShogiBoard extends JFXApp {
   //セルの描画処理, ここの中で再描画される
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
-    //仮にsellIndexが存在する場合はLightBlue色、そうでない場合は、Burlywood色で塗り潰す
     val fillColor = if (selectedCellIndex.contains(clickedIndex) && clickedKomaKind != clickedKomaStates.None ) { LightBlue }
     else if (clickedIndex <= 80 //盤面
       || ((clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4) //持ち駒
-    ){ //色をつける場所を指定
-      Burlywood
-    } else White
+    ) { Burlywood }
+    else White
 
     val grid = {
       val rect = Rectangle(80, 80, fillColor)
@@ -115,16 +111,7 @@ object ShogiBoard extends JFXApp {
       rect
     }
 
-    //先後表示のためのインスタンス化の切り分け
-    val group = komaOpt match {
-      case Some(koma) => {
-        koma.isSente match {
-          case true => new Group { children = List(Some(grid), komaOpt.map(senteKomaObjGroup)).flatten }
-          case false => new Group { children = List(Some(grid), komaOpt.map(goteKomaObjGroup)).flatten }
-        }
-      }
-      case None => new Group { children = List(Some(grid), komaOpt.map(senteKomaObjGroup)).flatten }
-    }
+    val group =  new Group { children = List(Some(grid), komaOpt.map(komaObjGroup)).flatten }
 
     /** todo ここらのdefは、Koma,Boardクラスで関数定義にもっと移行できるかも */
     /** 駒をクリックした時に使う関数のまとまり */
@@ -152,7 +139,6 @@ object ShogiBoard extends JFXApp {
         (optIsSente.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false)
     }
 
-    //todo この設計のせいで分岐が増えている, 工夫をした方がいい
     def addState(komaKind: ClickedKomaState, komaOwner: Option[Boolean], onBoard: Option[Boolean]) = {
       clickedKomaKind = komaKind
       optIsSenteKomaState = komaOwner
@@ -224,6 +210,7 @@ object ShogiBoard extends JFXApp {
       val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
       val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
 
+      //todo group.setOnMouseClickedで増えた重複コードを減らす
       //todo 移動条件がほぼベタ書きなのを変えたい
       group.setOnMouseClicked(e => {
         selectedCellIndex match { //ここで更新されるのは、eの方。selectedCellIndexではない
@@ -505,37 +492,20 @@ object ShogiBoard extends JFXApp {
     }
   }
 
-  /** 先手駒の描画関数 */
-  /* 駒の形、置き場所をセットで定義、その値を返す */
-  def senteKomaObjGroup(koma: Koma): Group = {
-
-    val view: String = koma.kind match {
-      case clickedKomaStates.Fu => clickedKomaStates.Fu.name
-      case clickedKomaStates.Kyo => clickedKomaStates.Kyo.name
-      case clickedKomaStates.Kei => clickedKomaStates.Kei.name
-      case clickedKomaStates.Gin => clickedKomaStates.Gin.name
-      case clickedKomaStates.Kin => clickedKomaStates.Kin.name
-      case clickedKomaStates.Ou => clickedKomaStates.Ou.name
-      case clickedKomaStates.Kaku => clickedKomaStates.Kaku.name
-      case clickedKomaStates.Hisha => clickedKomaStates.Hisha.name
-      case clickedKomaStates.To => clickedKomaStates.To.name
-      case clickedKomaStates.NariKyo => clickedKomaStates.NariKyo.name
-      case clickedKomaStates.NariKei => clickedKomaStates.NariKei.name
-      case clickedKomaStates.NariGin => clickedKomaStates.NariGin.name
-      case clickedKomaStates.Uma => clickedKomaStates.Uma.name
-      case clickedKomaStates.Ryu => clickedKomaStates.Ryu.name
-      case _ => clickedKomaStates.None.name
-    }
-
+  def komaObjGroup(koma: Koma): Group = {
     val senteKomaShape = { //駒の形を定義している
-      val poly = Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20) //todo "match case" できない?
+      val poly = koma.isSente match {
+        case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
+        case false => Polygon(20, 20, 60, 70, 70, 20, 10, 60, 10, 40)
+      }
         poly.setFill(Sienna)
         poly.setStroke(Black)
         poly
     }
+
     val komaLabel = { //升ないの駒の置き場所を定義してる
       val label = new Label
-      label.setText(view) //todo これでいいの?
+      label.setText(koma.kind.name)
       label.setFont(Font(30))
       label.setMaxSize(30, 30)
       label.setLayoutX(25)
@@ -545,47 +515,6 @@ object ShogiBoard extends JFXApp {
     }
     val obj = new Group(senteKomaShape, komaLabel) //駒の形、置き場所のセット
     obj
-  }
-
-  /** 後手駒の描画関数 */
-  def goteKomaObjGroup(koma: Koma): Group = {
-
-    val view: String = koma.kind match {
-      case clickedKomaStates.Fu => clickedKomaStates.Fu.name
-      case clickedKomaStates.Kyo => clickedKomaStates.Kyo.name
-      case clickedKomaStates.Kei => clickedKomaStates.Kei.name
-      case clickedKomaStates.Gin => clickedKomaStates.Gin.name
-      case clickedKomaStates.Kin => clickedKomaStates.Kin.name
-      case clickedKomaStates.Ou => clickedKomaStates.Ou.name
-      case clickedKomaStates.Kaku => clickedKomaStates.Kaku.name
-      case clickedKomaStates.Hisha => clickedKomaStates.Hisha.name
-      case clickedKomaStates.To => clickedKomaStates.To.name
-      case clickedKomaStates.NariKyo => clickedKomaStates.NariKyo.name
-      case clickedKomaStates.NariKei => clickedKomaStates.NariKei.name
-      case clickedKomaStates.NariGin => clickedKomaStates.NariGin.name
-      case clickedKomaStates.Uma => clickedKomaStates.Uma.name
-      case clickedKomaStates.Ryu => clickedKomaStates.Ryu.name
-      case _ => clickedKomaStates.None.name
-    }
-
-    val goteKomaShape = { //駒の形を定義している
-    val poly = Polygon(20, 20, 60, 70, 70, 20, 10, 60, 10, 40)
-      poly.setFill(Sienna)
-      poly.setStroke(Black)
-      poly
-    }
-    val komaLabel = { //升ないの駒の置き場所を定義してる
-    val label = new Label
-      label.setText(view)
-      label.setFont(Font(30))
-      label.setMaxSize(30, 30)
-      label.setLayoutX(25)
-      label.setLayoutY(25)
-      label.setAlignment(Pos.Center)
-      label
-    }
-    val objGroup = new Group(goteKomaShape, komaLabel)
-    objGroup
   }
 
   def repaint: Unit = {
