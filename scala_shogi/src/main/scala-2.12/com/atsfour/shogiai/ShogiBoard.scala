@@ -9,13 +9,10 @@ import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
 import scalafx.scene.{Group, Scene}
 
-
-// todo 駒の成り不成の選択
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  //駒の初期配置
-  var board: Board = Board(List(
+  var board: Board = Board(List( //初期の駒配置
     Koma(clickedKomaStates.Fu, 18, false, true), Koma(clickedKomaStates.Fu, 19, false, true), Koma(clickedKomaStates.Fu, 20, false, true),
     Koma(clickedKomaStates.Fu, 21, false, true), Koma(clickedKomaStates.Fu, 22, false, true), Koma(clickedKomaStates.Fu, 23, false, true),
     Koma(clickedKomaStates.Fu, 24, false, true), Koma(clickedKomaStates.Fu, 25, false, true), Koma(clickedKomaStates.Fu, 26, false, true),
@@ -32,10 +29,12 @@ object ShogiBoard extends JFXApp {
   ))
 
   //todo Stateを減らしたい
+  /** StateとFlagを定義 */
   var selectedCellIndex: Option[Int] = None
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
   var isSenteTurnState: Boolean = true
+  var stockNariIndex = -1
 
   var clickedKomaKind: ClickedKomaState = clickedKomaStates.None
   abstract class ClickedKomaState(val name: String)
@@ -56,35 +55,115 @@ object ShogiBoard extends JFXApp {
     case object Uma extends ClickedKomaState("馬")
     case object Ryu extends ClickedKomaState("龍")
 
-    lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu)
+    case object Sen extends ClickedKomaState("先")
+    case object Go extends ClickedKomaState("後")
+    case object Te extends ClickedKomaState("手")
+    case object No extends ClickedKomaState("の")
+    case object Ka extends ClickedKomaState("勝")
+    case object Chi extends ClickedKomaState("ち")
+    case object Bikkuri extends ClickedKomaState("!")
+    case object V extends ClickedKomaState("V")
+    case object S extends ClickedKomaState("S")
+    case object Not extends ClickedKomaState("不")
+    case object Na extends ClickedKomaState("成")
+    case object Ri extends ClickedKomaState("り")
+    case object Slash extends ClickedKomaState("/")
+    case object O extends ClickedKomaState("o")
+    case object R extends ClickedKomaState("r")
+    case object Ta extends ClickedKomaState("タ")
+    case object A extends ClickedKomaState("ー")
+    case object N extends ClickedKomaState("ン")
+
+    lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu, Sen, Go, Te, No, Ka, Chi, Bikkuri, V, S, Not, Na, Ri, Slash, O, R, Ta, A, N)
   }
 
-  /* `boardScene` という変数は、Sceneクラスをインスタンス化したもの
-  `content` は、Sceneクラスの関数 `content = boardObj(board)`
-  boardObj(board)は、 `def boardObj(board: Board) = {` を使っている */
+  /** 将棋盤のテンプレートの切り替え */
+  var (isWin, isCanNari) = (false, false)
+  def boardSwitch :Board = {
+    val realKomas: List[Koma] = board match { case Board(komas) => komas }
+    val displayKoma: Boolean = true
+    board = (isWin, isCanNari, isSenteTurnState) match { //1手指すと出てくる
+      case (false, false  ,true) => {
+      val normalBoard: Board = Board( //先手のターン
+          Koma(clickedKomaStates.Sen, 105, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Te, 106, isSenteTurnState, displayKoma):: Koma(clickedKomaStates.No, 107, isSenteTurnState, displayKoma) ::
+            (Koma(clickedKomaStates.Ta, 108, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.A, 109, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.N, 110, isSenteTurnState, displayKoma) ::
+              realKomas))
+        normalBoard
+      }
+      case (false, false , false) => {
+      val normalBoard: Board = Board( //後手のターン
+          Koma(clickedKomaStates.Go, 105, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Te, 106, isSenteTurnState, displayKoma):: Koma(clickedKomaStates.No, 107, isSenteTurnState, displayKoma) ::
+            (Koma(clickedKomaStates.Ta, 108, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.A, 109, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.N, 110, isSenteTurnState, displayKoma) ::
+              realKomas))
+        normalBoard
+      }
+      case (true, _ , false) => { //駒を取った時には後手の番に移っている
+        val SenteWinBoard: Board = Board( //先手の勝ち！
+          Koma(clickedKomaStates.Sen, 105, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Te, 106, !isSenteTurnState, displayKoma):: Koma(clickedKomaStates.No, 107, !isSenteTurnState, displayKoma) ::
+          (Koma(clickedKomaStates.Ka, 108, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Chi, 109, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Bikkuri, 110, !isSenteTurnState, displayKoma) ::
+          realKomas))
+        SenteWinBoard
+      }
+      case (true, _ , true) => {
+        val GoteWinboard: Board = Board( //後手の勝ち！
+          Koma(clickedKomaStates.Go, 105, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Te, 106, !isSenteTurnState, displayKoma):: Koma(clickedKomaStates.No, 107, !isSenteTurnState, displayKoma) ::
+          (Koma(clickedKomaStates.Ka, 108, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Chi, 109, !isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Bikkuri, 110, !isSenteTurnState, displayKoma) ::
+          realKomas))
+        GoteWinboard
+      }
+      case (_, true , true) => {
+        val SenteWinBoard: Board = Board( // 成りor不成
+          Koma(clickedKomaStates.Na, 105, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Ri, 106, isSenteTurnState, displayKoma):: Koma(clickedKomaStates.O, 107, isSenteTurnState, displayKoma) ::
+            Koma(clickedKomaStates.R, 108, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Not, 109, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Na, 110, isSenteTurnState, displayKoma) ::
+            realKomas)
+        SenteWinBoard
+      }
+      case (_, true , false) => {
+        val GoteWinboard: Board = Board( // 成りor不成
+          Koma(clickedKomaStates.Na, 105, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Ri, 106, isSenteTurnState, displayKoma):: Koma(clickedKomaStates.O, 107, isSenteTurnState, displayKoma) ::
+            Koma(clickedKomaStates.R, 108, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Not, 109, isSenteTurnState, displayKoma) :: Koma(clickedKomaStates.Na, 110, isSenteTurnState, displayKoma) :: realKomas)
+        GoteWinboard
+      }
+      case _ => {
+        val normalBoard: Board = Board(realKomas)
+        normalBoard
+      }
+    }
+    board
+  }
+
+  /** 描画定義 */
+  def inBord(index:Int) = index <= 80
+  def outOfBord(index:Int) = (index >= 81 && index <= 134) //持ち駒,テンプレートの描画をする場所
+
+  //Sceneクラスをインスタンス化したもの
   val boardScene = new Scene {
-    fill = White
+    fill = Transparent
     content = boardObjPane
   }
 
   /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
   stage = new JFXApp.PrimaryStage {
-    title.value = "Hello Scala Shogi"
+    title.value = "Hello Scala Shogi!"
     width = 1850
     height = 800
     scene = boardScene
   }
 
+  def repaint: Unit = {
+    boardScene.content = boardObjPane
+  }
+
   def boardObjPane = {
     val pane = new GridPane
-    board.cells.zipWithIndex.foreach { /** 盤面, cellsを81回呼んでいる */
+    board.cells.zipWithIndex.foreach { //cellsを繰り返し呼んでいる
       case (optKoma, index) => {
-        if (index <= 80) {
+        if (inBord(index)) {
           val x = index % 9
           val y = index / 9
           pane.add(cellObjGroup(optKoma, index), x, y)
         }
-        if (index >= 81 && index <= 134) { /** 持ち駒を置く場所を確保 */
+        if (outOfBord(index))  {
         val x = (index - 81) % 6 + 10
           val y = (index - 81) / 6
           pane.add(cellObjGroup(optKoma, index), x, y) //負の座標は.addできない
@@ -94,9 +173,10 @@ object ShogiBoard extends JFXApp {
     pane
   }
 
-  //セルの描画処理, ここの中で再描画される
+  /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
+    /** Cellの描画を定義 */
     val fillColor = if (selectedCellIndex.contains(clickedIndex) && clickedKomaKind != clickedKomaStates.None ) { LightBlue }
     else if (clickedIndex <= 80 //盤面
       || ((clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4) //持ち駒
@@ -113,45 +193,71 @@ object ShogiBoard extends JFXApp {
 
     val group =  new Group { children = List(Some(grid), komaOpt.map(komaObjGroup)).flatten }
 
-    /** todo ここらのdefは、Koma,Boardクラスで関数定義にもっと移行できるかも */
-    /** 駒をクリックした時に使う関数のまとまり */
-
-    /* clickedIndexと一致した場合の駒情報を取得する (komaの中の、ClickedIndexと一致する、という条件が必要(本当は)) */
-    val optClickedKoma: Option[ClickedKomaState] = komaOpt.map(koma => koma.kind)
-    val optIsSente: Option[Boolean] = komaOpt.map(koma => koma.isSente)
+    /** 以下、駒をクリックした時に使う関数のまとまり */
+    /* clickedIndexと一致した場合の駒情報を取得する (komaの中のClickedIndexと一致する、という条件が必要(本当は)) */
+    val optClickedKomaKind: Option[ClickedKomaState] = komaOpt.map(koma => koma.kind)
+    val optIsSenteKoma: Option[Boolean] = komaOpt.map(koma => koma.isSente)
     val optOnBoard: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
 
+    val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
+    val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
+    val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
+
+    /** クリック時にどの判定を行うべきか分岐 */
     def senteHandKomaBranch: Boolean = {
       ((optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None) || optOnBoardKomaState.contains(false)) &&
-        (optIsSente.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(true)
+        (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari
     }
     def goteHandKomaBranch: Boolean = {
       ((optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None) || optOnBoardKomaState == Option(false)) &&
-        (optIsSente.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(true)
+        (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari
     }
 
     def senteKomaBranch(koma: ClickedKomaState): Boolean = {
-      ((optClickedKoma.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
-        (optIsSente.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false)
+      ((optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
+        (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari
     }
     def goteKomaBranch(koma: ClickedKomaState): Boolean = {
-      ((optClickedKoma.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
-        (optIsSente.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false)
+      ((optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
+        (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari
     }
 
-    def addState(komaKind: ClickedKomaState, komaOwner: Option[Boolean], onBoard: Option[Boolean]) = {
-      clickedKomaKind = komaKind
-      optIsSenteKomaState = komaOwner
-      optOnBoardKomaState = onBoard
+    def nariChoiceBranch: Boolean = {
+      (optClickedKomaKind.contains(clickedKomaStates.Na) && selectedCellIndex.contains(105)) || optClickedKomaKind.contains(clickedKomaStates.Ri)
+    }
+    def funariChoiceBranch: Boolean = {
+      (optClickedKomaKind.contains(clickedKomaStates.Na) && selectedCellIndex.contains(110)) || optClickedKomaKind.contains(clickedKomaStates.Not)
+    }
+
+    /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
+    def addState = {
+      clickedKomaKind = optClickedKomaKind.getOrElse(clickedKomaStates.None)
+      optIsSenteKomaState = optIsSenteKoma
+      optOnBoardKomaState = optOnBoard
+    }
+    def fromToBoradAddState(koma: ClickedKomaState) = {
+      if (optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) addState
     }
     def clickCancel = {
-      selectedCellIndex = None
-      optIsSenteKomaState = None
-      clickedKomaKind = clickedKomaStates.None
-      optOnBoardKomaState = None
+      if (moveDistance != 0) {
+        clickedKomaKind = clickedKomaStates.None
+        optIsSenteKomaState = None
+        optOnBoardKomaState = None
+        selectedCellIndex = None
+      }
     }
 
-    //持ち駒をどこに置くかを決める, 持ち駒をソートする機能があると見栄えが良い
+    /** 駒を取った時の処理と王様が取られた場合の判定 */
+    def takeKoma(clickedIndex: Int) = { //駒を取った時に行う処理の集まり
+      takeOuCheck(clickedIndex)
+      board = board.ownerChangeKoma(clickedIndex, optIsSenteKoma.contains(true)) //相手の駒が自分の駒になる
+      board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(true)) //盤上の取られた駒が持ち駒になる
+      board = board.returnNariKoma(clickedIndex)
+      board = board.moveKoma(clickedIndex, handMove) //取られた駒の情報を書き換えて、最後に持ち駒に移動する
+    }
+
+    //持ち駒をどこに置くかを決める
+    //todo varを無くす, 持ち駒をソートする機能があると見栄えが良い
     def handMove: Int = {
       var (handPlace, count) = (108, 0)
       if (isSenteTurnState) {
@@ -168,328 +274,341 @@ object ShogiBoard extends JFXApp {
       }
       handPlace
     }
-    def takeKoma(clickedIndex: Int) = { //駒を取った時に行う処理の集まり
-      board = board.returnNariKoma(clickedIndex)
-      board = board.ownerChangeKoma(clickedIndex, optIsSente.contains(true))
-      board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(true)) //取られた駒は持ち駒になる
-      board = board.moveKoma(clickedIndex, handMove)
+
+    def takeOuCheck(clickedIndex: Int) = {
+      optClickedKomaKind.getOrElse(clickedKomaStates.None) match {
+        case clickedKomaStates.Ou => isWin = true
+        case _ =>
+      }
     }
 
-    def toMoveBoard: Boolean = clickedIndex <= 80
-    def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
+    /** 成れるかどうかの条件判定 */
+    def mustNari(num: Int): Boolean = isSenteTurnState match {
+      case true => {
+        println((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo), (clickedIndex / 9) + 1 == 1)
+        ((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 1) || //先手の歩と香車が1段目
+          (clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) <= 2) //先手の桂馬が1段目と2段目
+      }
+      case false => {
+        println((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo), (clickedIndex / 9) + 1 == 9)
+        ((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 9) ||
+          (clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) >= 8)
+      }
+    }
 
     def canNari(num: Int): Boolean = isSenteTurnState match {
-      case true => (clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3   //3段目以内にいた、もしくは3段目以内に入った
-      case false => ((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7
+      case true => {
+        ((clickedIndex / 9) + 1 <= 3 || (num / 9) + 1 <= 3) && isNariKoma && fromOnBoard(num)
+      } //成れる駒が、3段目以内にいた、もしくは3段目以内に入った
+      case false => {
+        (((clickedIndex / 9) + 1 >= 7) || (num / 9) + 1 >= 7) && isNariKoma && fromOnBoard(num)
+      }
     }
 
-    def playAndInitializeAndNari(nariGoma: ClickedKomaState, num: Int) = {
-      selectedCellIndex = None
-      clickedKomaKind = clickedKomaStates.None
-      optIsSenteKomaState = None
-      board = board.moveKoma(num, clickedIndex)
-      if (canNari(num: Int)) board = board.nariKoma(clickedIndex, nariGoma)
-      isSenteTurnState = switchTurn(isSenteTurnState)
-      optOnBoardKomaState = None
+    def isNariKoma: Boolean = {
+      clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo ||
+        clickedKomaKind == clickedKomaStates.Kei || clickedKomaKind == clickedKomaStates.Gin ||
+        clickedKomaKind == clickedKomaStates.Hisha || clickedKomaKind == clickedKomaStates.Kaku
     }
+
+    /** 成り駒フラグの処理 */
+    def addNariGomaState = {
+      isCanNari = true //成れる場合は成り不成選択のフラグを立てる
+      stockNariIndex = clickedIndex
+    }
+    def initializeNariGomaState = {
+      isCanNari = false
+      isSenteTurnState = switchTurn(isSenteTurnState)
+      stockNariIndex = -1
+    }
+
+    /** 実際に手を指し、今までの条件を初期化する */
+    def toMoveBoard: Boolean = clickedIndex <= 80
+    def fromOnBoard(num: Int): Boolean = num <= 80
+    def fromOutOfBoard(num: Int): Boolean = num >= 81 && num <= 134
+    def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
+
     def playAndInitialize(num: Int) = {
-      selectedCellIndex = None
-      clickedKomaKind = clickedKomaStates.None
-      optIsSenteKomaState = None
+
+      if (mustNari(num)) {
+        board = board.nariKoma(num) //強制的に成り、相手の手番へ
+        isSenteTurnState = switchTurn(isSenteTurnState)
+      }
+      else if (canNari(num)) addNariGomaState //どこにいる駒が成れる状態、という状態を付与
+      else isSenteTurnState = switchTurn(isSenteTurnState) //成れない場合は相手の手番へ
+
       board = board.moveKoma(num, clickedIndex)
       if (optOnBoardKomaState.contains(false))
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
-      isSenteTurnState = switchTurn(isSenteTurnState)
+
+      selectedCellIndex = None
+      optIsSenteKomaState = None
+      clickedKomaKind = clickedKomaStates.None
       optOnBoardKomaState = None
+    }
+
+    /** 盤上の駒を動かす時のtakeKomaとplayAndInitializeの条件分岐処理をまとめた */
+    def takeKomaAndplayAndInitialize(num: Int) = {
+      isSenteTurnState match {
+        case true => {
+          if (optIsSenteKoma.contains(false)) takeKoma(clickedIndex)
+          if (!optIsSenteKoma.contains(true)) playAndInitialize(num)
+        }
+        case false => {
+          if (optIsSenteKoma.contains(true)) takeKoma(clickedIndex)
+          if (!optIsSenteKoma.contains(false)) playAndInitialize(num)
+        }
+      }
     }
     /** ここまで駒をクリックした時に使われる関数群 */
 
+    //todo 移動条件を関数化、呼び出す形にする
     /** boardに、selectedCellIndex(選択したセルのIndex)をboard変数に移動させ、repaint関数で 再描画する */
-    if (selectedCellIndex.isDefined) { /** クリックされてる場合 */
-    val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
-      val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
-      val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
+    group.setOnMouseClicked(e => {
+      selectedCellIndex match {
+        case Some(num) => {
 
-      //todo group.setOnMouseClickedで増えた重複コードを減らす
-      //todo 移動条件がほぼベタ書きなのを変えたい
-      group.setOnMouseClicked(e => {
-        selectedCellIndex match { //ここで更新されるのは、eの方。selectedCellIndexではない
-          case Some(num) => { /** 各々の駒の動く条件に一致する場合はindexへ移動させる */
+          // デバッグ用
+          println("existSelectedCellIndex:" + existSelectedCellIndex, "selectedCellIndex:" + selectedCellIndex, "stockNariIndex:" + stockNariIndex)
+          println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
+          println("optIsSenteKoma:" + optIsSenteKoma, "optIsSenteKomaState:" + optIsSenteKomaState)
+          println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
+          println("isSenteTurnState:" + isSenteTurnState)
+          println("")
 
-            // デバッグ用
-            println("optClickedKoma:" + optClickedKoma, "clickedKomaFlag:" + clickedKomaKind, "optIsSente:" + optIsSente, "senteKomaFlag:" + optIsSenteKomaState)
-            println("selectedCellIndex:" + selectedCellIndex, "nextTurn:" + isSenteTurnState, "clickedIndex:" + clickedIndex)
-            println("onBoardKomaFlag:" + optOnBoardKomaState, "optOnBoard:" + optOnBoard)
-
-            if (senteHandKomaBranch) { /** 先手で持ち駒をクリックした、選択していた場合, 移動条件のfalseの範囲に注意 */
-              if (clickedIndex <= 80 && optIsSente.isEmpty &&
-                (!((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 1)) && //先手の歩と香車は、1段目に打てない
-                !(clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) <= 2) && //先手の桂馬は、1段目と2段目に打てない
-                (clickedKomaKind != clickedKomaStates.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))
-               ) {
-                playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-              if (optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None)
-                addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-            }
-            else if (goteHandKomaBranch) { /** 後手で持ち駒をクリックした、選択していた場合, 移動条件のfalseの範囲に注意 */
-              if ( clickedIndex <= 80 && optIsSente.isEmpty &&
-                (!((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 9)) && //後手の歩と香車は、9段目に打てない
-                (!(clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) >= 8)) && //後手の桂馬は、8段目と9段目に打てない
-                (clickedKomaKind != clickedKomaStates.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true))) //先手ならtrue, 後手ならfalseを返す
-              ) {
-                playAndInitialize(num)
-              }
-              else if (moveDistance != 0) clickCancel
-              if (optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None)
-                addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-            }
-
-            /** 持ち駒でない場合、盤上の駒なので、処理に入る */
-            else if (senteKomaBranch(clickedKomaStates.Fu)) { /** 先手の歩の場合 */
-              /** クリックした時に一度入ったというフラグを用意(行き先をクリックした時、駒を認識できなくなっている) */
-              addState(clickedKomaStates.Fu, optIsSente, optOnBoard)
-              if (moveDistance == 9 && toMoveBoard) {
-                //駒の移動条件を満たしていて、移動先に駒がない場合に、移動できる
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.To, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Fu)) { /** 後手の歩の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (moveDistance == -9 && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.To, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Kyo)) { /** 先手の香車の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (moveDistance % 9 == 0 && moveDistance > 0 && board.upJumpCheck(num, clickedIndex) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.NariKyo, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Kyo)) { /** 後手の香車の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, clickedIndex) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.NariKyo, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Kei)) { /** 先手の桂馬の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (moveDistance == 17 || moveDistance == 19 && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.NariKei, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Kei)) { /** 後手の桂馬の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (moveDistance == -17 || moveDistance == -19 && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.NariKei, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Gin)) { /** 先手の銀の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.NariGin, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Gin)) { /** 後手の銀の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.NariGin, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Kin)) { /** 先手の金の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Kin)) { /** 後手の金の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Ou)) { /** 先手の王の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Ou)) { /** 後手の王の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Kaku)) { /** 先手の角の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上から右下方向
-                || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //右上から左下方向
-                && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.Uma, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Kaku)) { /** 後手の角の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-                || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
-                && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.Uma, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            else if (senteKomaBranch(clickedKomaStates.Hisha)) { /** 先手の飛車の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
-                || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
-                && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitializeAndNari(clickedKomaStates.Ryu, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Hisha)) { /** 後手の飛車の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
-                || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
-                && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitializeAndNari(clickedKomaStates.Ryu, num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
-            /** 成り駒 */
-            else if (senteKomaBranch(clickedKomaStates.To)) { /** 先手のとの場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.To)) { /** 後手のとの場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (senteKomaBranch(clickedKomaStates.NariKyo)) { /** 先手の成香の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.NariKyo)) { /** 後手の成香の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (senteKomaBranch(clickedKomaStates.NariKei)) { /** 先手の成桂の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.NariKei)) { /** 後手の成桂の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (senteKomaBranch(clickedKomaStates.NariGin)) { /** 先手の成銀の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.NariGin)) { /** 後手の成銀の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (senteKomaBranch(clickedKomaStates.Uma)) { /** 先手の馬の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上~右下
-                || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //左下~右上
-                || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Uma)) { /** 後手の馬の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-                || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
-                || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (senteKomaBranch(clickedKomaStates.Ryu)) { /** 先手の龍の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
-                || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
-                || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(false)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(true)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-            else if (goteKomaBranch(clickedKomaStates.Ryu)) { /** 後手の龍の場合 */
-              addState(optClickedKoma.getOrElse(clickedKomaStates.None), optIsSente, optOnBoard)
-              if (((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
-                || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
-                || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
-                if (optIsSente.contains(true)) takeKoma(clickedIndex)
-                if (!optIsSente.contains(false)) playAndInitialize(num)
-              } else if (moveDistance != 0) clickCancel
-            }
-
+          /** 駒が成るかどうかの判定をクリックした場合の処理 */
+          if (nariChoiceBranch) {
+            board = board.nariKoma(stockNariIndex)
+            initializeNariGomaState //立てた成りフラグを元に戻す
           }
-          case None => selectedCellIndex = Some(clickedIndex)
-        }
-        repaint //再描画関数(一番下で定義)
-      })
-      group
+          else if (funariChoiceBranch) { initializeNariGomaState }
 
-    } else { /** クリックされない場合(初期画面表示) */
-      group.setOnMouseClicked(e => {
-        selectedCellIndex match {
-          case Some(num) => {
-            board = board.moveKoma(num, clickedIndex)
-            selectedCellIndex = None
+          /** 持ち駒をクリックした場合の処理 */
+          if (senteHandKomaBranch) { /** 先手で持ち駒をクリックした、選択していた場合 */
+            /** クリックした時に一度入ったというStateを用意(行き先をクリックした時、駒を認識できなくなっている) */
+            if (optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None) addState
+
+            if (toMoveBoard && optIsSenteKoma.isEmpty &&
+              (!((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 1)) && //先手の歩と香車は、1段目に打てない
+              !(clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) <= 2) && //先手の桂馬は、1段目と2段目に打てない
+              (clickedKomaKind != clickedKomaStates.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))
+            ) {
+              playAndInitialize(num)
+
+            } else clickCancel
           }
-          case None => selectedCellIndex = Some(clickedIndex)
+
+          else if (goteHandKomaBranch) { /** 後手で持ち駒をクリックした、選択していた場合 */
+            if (optOnBoard.contains(false) && clickedKomaKind == clickedKomaStates.None) addState
+            if (toMoveBoard && optIsSenteKoma.isEmpty &&
+              (!((clickedKomaKind == clickedKomaStates.Fu || clickedKomaKind == clickedKomaStates.Kyo) && (clickedIndex / 9) + 1 == 9)) && //後手の歩と香車は、9段目に打てない
+              (!(clickedKomaKind == clickedKomaStates.Kei && (clickedIndex / 9 + 1) >= 8)) && //後手の桂馬は、8段目と9段目に打てない
+              (clickedKomaKind != clickedKomaStates.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true))) //先手ならtrue, 後手ならfalseを返す
+            ) {
+              playAndInitialize(num)
+            } else clickCancel
+          }
+
+          /** 持ち駒でない場合、盤上の駒なので、処理に入る */
+          else if (senteKomaBranch(clickedKomaStates.Fu)) { /** 先手の歩の場合 */
+            fromToBoradAddState(clickedKomaStates.Fu)
+            if (moveDistance == 9 && toMoveBoard) takeKomaAndplayAndInitialize(num)
+            else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Fu)) { /** 後手の歩の場合 */
+            fromToBoradAddState(clickedKomaStates.Fu)
+            if (moveDistance == -9 && toMoveBoard) takeKomaAndplayAndInitialize(num)
+            else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Kyo)) { /** 先手の香車の場合 */
+            fromToBoradAddState(clickedKomaStates.Kyo)
+            if (moveDistance % 9 == 0 && toMoveBoard) takeKomaAndplayAndInitialize(num)
+            else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Kyo)) { /** 後手の香車の場合 */
+            fromToBoradAddState(clickedKomaStates.Kyo)
+            if (moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, clickedIndex) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Kei)) { /** 先手の桂馬の場合 */
+            fromToBoradAddState(clickedKomaStates.Kei)
+            if (moveDistance == 17 || moveDistance == 19 && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Kei)) { /** 後手の桂馬の場合 */
+            fromToBoradAddState(clickedKomaStates.Kei)
+            if (moveDistance == -17 || moveDistance == -19 && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Gin)) { /** 先手の銀の場合 */
+            fromToBoradAddState(clickedKomaStates.Gin)
+            if ((absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Gin)) { /** 後手の銀の場合 */
+            fromToBoradAddState(clickedKomaStates.Gin)
+            if ((absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Kin)) { /** 先手の金の場合 */
+            fromToBoradAddState(clickedKomaStates.Kin)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Kin)) { /** 後手の金の場合 */
+            fromToBoradAddState(clickedKomaStates.Kin)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Ou)) { /** 先手の王の場合 */
+            fromToBoradAddState(clickedKomaStates.Ou)
+            if ((absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Ou)) { /** 後手の王の場合 */
+            fromToBoradAddState(clickedKomaStates.Ou)
+            if ((absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Kaku)) { /** 先手の角の場合 */
+            fromToBoradAddState(clickedKomaStates.Kaku)
+            if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上から右下方向
+              || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //右上から左下方向
+              && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Kaku)) { /** 後手の角の場合 */
+            fromToBoradAddState(clickedKomaStates.Kaku)
+            if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+              && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          else if (senteKomaBranch(clickedKomaStates.Hisha)) { /** 先手の飛車の場合 */
+            fromToBoradAddState(clickedKomaStates.Hisha)
+            if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
+              && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Hisha)) { /** 後手の飛車の場合 */
+            fromToBoradAddState(clickedKomaStates.Hisha)
+            if ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
+              && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
+          /** 成り駒 */
+          else if (senteKomaBranch(clickedKomaStates.To)) { /** 先手のとの場合 */
+            fromToBoradAddState(clickedKomaStates.To)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.To)) { /** 後手のとの場合 */
+            fromToBoradAddState(clickedKomaStates.To)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (senteKomaBranch(clickedKomaStates.NariKyo)) { /** 先手の成香の場合 */
+            fromToBoradAddState(clickedKomaStates.NariKyo)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.NariKyo)) { /** 後手の成香の場合 */
+            fromToBoradAddState(clickedKomaStates.NariKyo)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (senteKomaBranch(clickedKomaStates.NariKei)) { /** 先手の成桂の場合 */
+            fromToBoradAddState(clickedKomaStates.NariKei)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.NariKei)) { /** 後手の成桂の場合 */
+            fromToBoradAddState(clickedKomaStates.NariKei)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (senteKomaBranch(clickedKomaStates.NariGin)) { /** 先手の成銀の場合 */
+            fromToBoradAddState(clickedKomaStates.NariGin)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.NariGin)) { /** 後手の成銀の場合 */
+            fromToBoradAddState(clickedKomaStates.NariGin)
+            if ((absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (senteKomaBranch(clickedKomaStates.Uma)) { /** 先手の馬の場合 */
+            fromToBoradAddState(clickedKomaStates.Uma)
+            if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上~右下
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //左下~右上
+              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Uma)) { /** 後手の馬の場合 */
+            fromToBoradAddState(clickedKomaStates.Uma)
+            if (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard) {
+              println(board.leftUpJumpCheck(num, clickedIndex))
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (senteKomaBranch(clickedKomaStates.Ryu)) { /** 先手の龍の場合 */
+            fromToBoradAddState(clickedKomaStates.Ryu)
+            if (((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
+              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+          else if (goteKomaBranch(clickedKomaStates.Ryu)) { /** 後手の龍の場合 */
+            fromToBoradAddState(clickedKomaStates.Ryu)
+            if (((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
+              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard) {
+              takeKomaAndplayAndInitialize(num)
+            } else clickCancel
+          }
+
         }
-        repaint //再描画関数(一番下で定義する)
-      })
-      group
-    }
+        case None => selectedCellIndex = Some(clickedIndex)
+      }
+      boardSwitch
+      repaint
+    })
+    group
   }
 
   def komaObjGroup(koma: Koma): Group = {
@@ -515,10 +634,6 @@ object ShogiBoard extends JFXApp {
     }
     val obj = new Group(senteKomaShape, komaLabel) //駒の形、置き場所のセット
     obj
-  }
-
-  def repaint: Unit = {
-    boardScene.content = boardObjPane
   }
 
 }

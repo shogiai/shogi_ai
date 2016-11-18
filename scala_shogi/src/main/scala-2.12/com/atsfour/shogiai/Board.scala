@@ -34,8 +34,15 @@ case class Board(komas: List[Koma]) {
   }
 
   //成り駒を作る
-  def nariKoma(place: Int, nariKoma: ClickedKomaState): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((koma, i)) => Board(komas.updated(i, koma.nari(nariKoma)))
+  def nariKoma(place: Int): Board = komas.zipWithIndex.find(_._1.index == place) match {
+    case Some((Koma(clickedKomaStates.Fu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.To, index, isSente, onBoard).nari(clickedKomaStates.To)))
+    case Some((Koma(clickedKomaStates.Kyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKyo, index, isSente, onBoard).nari(clickedKomaStates.NariKyo)))
+    case Some((Koma(clickedKomaStates.Kei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKei, index, isSente, onBoard).nari(clickedKomaStates.NariKei)))
+    case Some((Koma(clickedKomaStates.Gin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariGin, index, isSente, onBoard).nari(clickedKomaStates.NariGin)))
+    case Some((Koma(clickedKomaStates.Kaku, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Uma, index, isSente, onBoard).nari(clickedKomaStates.Uma)))
+    case Some((Koma(clickedKomaStates.Hisha, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Ryu, index, isSente, onBoard).nari(clickedKomaStates.Ryu)))
+
+    case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
   }
 
@@ -47,14 +54,6 @@ case class Board(komas: List[Koma]) {
     case Some((Koma(clickedKomaStates.NariGin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariGin, index, isSente, onBoard).nari(clickedKomaStates.Gin)))
     case Some((Koma(clickedKomaStates.Uma, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Uma, index, isSente, onBoard).nari(clickedKomaStates.Kaku)))
     case Some((Koma(clickedKomaStates.Ryu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Ryu, index, isSente, onBoard).nari(clickedKomaStates.Hisha)))
-    case Some((Koma(clickedKomaStates.Ou, index, true, onBoard), i)) => {
-      println("後手の勝ち") //todo scalaFXで描画
-      Board(komas.updated(i, Koma(clickedKomaStates.Ou, index, true, onBoard).nari(clickedKomaStates.Ou)))
-    }
-    case Some((Koma(clickedKomaStates.Ou, index, false, onBoard), i)) => {
-      println("先手の勝ち")
-      Board(komas.updated(i, Koma(clickedKomaStates.Ou, index, false, onBoard).nari(clickedKomaStates.Ou)))
-    }
     case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
   }
@@ -93,6 +92,7 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard)
   }
 
+  //todo もう一度チェックしよ
   /** 右上方向にどれだけ動けるか */
   def rightUpJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
