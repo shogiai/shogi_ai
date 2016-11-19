@@ -133,8 +133,8 @@ object ShogiBoard extends JFXApp {
   }
 
   /** 描画定義 */
-  def inBord(index:Int) = index <= 80
-  def outOfBord(index:Int) = (index >= 81 && index <= 134) //持ち駒,テンプレートの描画をする場所
+  def inBord(index: Int) = index <= 80
+  def outOfBord(index: Int) = index >= 81 && index <= 134 //持ち駒,テンプレートの描画をする場所
 
   //Sceneクラスをインスタンス化したもの
   val boardScene = new Scene {
@@ -176,18 +176,21 @@ object ShogiBoard extends JFXApp {
   /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
+    def toMoveBoard: Boolean = clickedIndex <= 80
+    def handPlace: Boolean = (clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4
+
+    def fromOnBoard(num: Int): Boolean = num <= 80
+    def fromOutOfBoard(num: Int): Boolean = num >= 81 && num <= 134
+    def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
+
     /** Cellの描画を定義 */
-    val fillColor = if (selectedCellIndex.contains(clickedIndex) && clickedKomaKind != clickedKomaStates.None ) { LightBlue }
-    else if (clickedIndex <= 80 //盤面
-      || ((clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4) //持ち駒
-    ) { Burlywood }
+    val fillColor = if (selectedCellIndex.contains(clickedIndex) && clickedKomaKind != clickedKomaStates.None ) LightBlue
+    else if (toMoveBoard || handPlace) Burlywood
     else White
 
     val grid = {
       val rect = Rectangle(80, 80, fillColor)
-      if (clickedIndex <= 80 //盤面
-        || ((clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4) //持ち駒
-      ){ rect.setStroke(Black) }
+      if (toMoveBoard || handPlace) rect.setStroke(Black)
       rect
     }
 
@@ -320,11 +323,6 @@ object ShogiBoard extends JFXApp {
     }
 
     /** 実際に手を指し、今までの条件を初期化する */
-    def toMoveBoard: Boolean = clickedIndex <= 80
-    def fromOnBoard(num: Int): Boolean = num <= 80
-    def fromOutOfBoard(num: Int): Boolean = num >= 81 && num <= 134
-    def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
-
     def playAndInitialize(num: Int) = {
 
       if (mustNari(num)) {
@@ -382,7 +380,7 @@ object ShogiBoard extends JFXApp {
             case clickedKomaStates.Kei => moveDistance == 17 || moveDistance == 19 && toMoveBoard
             case clickedKomaStates.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) && toMoveBoard
             case clickedKomaStates.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case clickedKomaStates.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case clickedKomaStates.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
             case clickedKomaStates.Kaku => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上から右下方向
               || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //右上から左下方向
               && toMoveBoard)
@@ -393,11 +391,11 @@ object ShogiBoard extends JFXApp {
             case clickedKomaStates.NariKyo => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
             case clickedKomaStates.NariKei => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
             case clickedKomaStates.NariGin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case clickedKomaStates.Uma => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+            case clickedKomaStates.Uma => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
               || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
-            case clickedKomaStates.Ryu => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+            case clickedKomaStates.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
               || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
             case _ => false
           }
@@ -408,7 +406,7 @@ object ShogiBoard extends JFXApp {
             case clickedKomaStates.Kei => moveDistance == -17 || moveDistance == -19 && toMoveBoard
             case clickedKomaStates.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) && toMoveBoard
             case clickedKomaStates.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case clickedKomaStates.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case clickedKomaStates.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
             case clickedKomaStates.Kaku => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
               || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
               && toMoveBoard)
@@ -422,8 +420,8 @@ object ShogiBoard extends JFXApp {
             case clickedKomaStates.Uma => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
               || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
               || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
-            case clickedKomaStates.Ryu => (((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+            case clickedKomaStates.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
               || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
             case _ => false
           }
