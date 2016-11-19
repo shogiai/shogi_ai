@@ -1,6 +1,6 @@
 package com.atsfour.shogiai
 
-import ShogiBoard.{clickedKomaStates, ClickedKomaState}
+import ShogiBoard.clickedKomaStates
 
 case class Board(komas: List[Koma]) {
 
@@ -92,7 +92,6 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard)
   }
 
-  //todo もう一度チェックしよ
   /** 右上方向にどれだけ動けるか */
   def rightUpJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
