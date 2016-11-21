@@ -5,12 +5,17 @@ import ShogiBoard.clickedKomaStates
 case class Board(komas: List[Koma]) {
 
   //todo 棋譜を読み込めるように、将棋盤の表示形式を工夫したい
+  //todo お互いの駒の点数チェックを行える関数作成
   /* 場所をList形式で取得したものから、komas.findし、今の場所を取得する */
   val cellIndice = (0 until 136).toList
   val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
   def row(index: Int): Int = index / 9
   def column(index: Int): Int = index % 9
+
+  def aaa(now: Int, isSenteInput: Boolean): Boolean = {
+    komas.forall(koma => column(koma.index) != column(now) || koma.kind != clickedKomaStates.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
+  }
 
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
