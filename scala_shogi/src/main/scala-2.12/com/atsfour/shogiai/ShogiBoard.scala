@@ -507,7 +507,7 @@ object ShogiBoard extends JFXApp {
     val senteKomaShape = { //駒の形を定義している
       val poly = koma.isSente match {
         case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
-        case false => Polygon(60, 70, 70, 20, 10, 60, 10, 40, 20, 20)
+        case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
       }
         poly.setFill(Sienna)
         poly.setStroke(Black)
