@@ -216,7 +216,6 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    //(optIsSenteKoma.contains(true) || optIsSenteKomaState.isDefined) &&
     def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
       isSenteTurnState match {
         case true => ((optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
