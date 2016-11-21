@@ -13,10 +13,6 @@ case class Board(komas: List[Koma]) {
   def row(index: Int): Int = index / 9
   def column(index: Int): Int = index % 9
 
-  def aaa(now: Int, isSenteInput: Boolean): Boolean = {
-    komas.forall(koma => column(koma.index) != column(now) || koma.kind != clickedKomaStates.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
-  }
-
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
