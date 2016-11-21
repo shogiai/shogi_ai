@@ -216,10 +216,11 @@ object ShogiBoard extends JFXApp {
       }
     }
 
+    //(optIsSenteKoma.contains(true) || optIsSenteKomaState.isDefined) &&
     def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
       isSenteTurnState match {
         case true => ((optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
-          (optIsSenteKoma.isDefined || optIsSenteKomaState.isDefined) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
+          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
         case false => ((optClickedKomaKind.contains(koma) && clickedKomaKind == clickedKomaStates.None) || clickedKomaKind == koma) &&
           (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
       }
@@ -507,7 +508,7 @@ object ShogiBoard extends JFXApp {
     val senteKomaShape = { //駒の形を定義している
       val poly = koma.isSente match {
         case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
-        case false => Polygon(20, 20, 60, 70, 70, 20, 10, 60, 10, 40)
+        case false => Polygon(60, 70, 70, 20, 10, 60, 10, 40, 20, 20)
       }
         poly.setFill(Sienna)
         poly.setStroke(Black)
