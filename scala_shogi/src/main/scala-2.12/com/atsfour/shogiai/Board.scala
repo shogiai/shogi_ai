@@ -1,6 +1,6 @@
 package com.atsfour.shogiai
 
-import ShogiBoard.clickedKomaStates
+import ShogiBoard.ClickedKomaState
 
 case class Board(komas: List[Koma]) {
 
@@ -36,12 +36,12 @@ case class Board(komas: List[Koma]) {
 
   //成り駒を作る
   def nariKoma(place: Int): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((Koma(clickedKomaStates.Fu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.To, index, isSente, onBoard).nari(clickedKomaStates.To)))
-    case Some((Koma(clickedKomaStates.Kyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKyo, index, isSente, onBoard).nari(clickedKomaStates.NariKyo)))
-    case Some((Koma(clickedKomaStates.Kei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKei, index, isSente, onBoard).nari(clickedKomaStates.NariKei)))
-    case Some((Koma(clickedKomaStates.Gin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariGin, index, isSente, onBoard).nari(clickedKomaStates.NariGin)))
-    case Some((Koma(clickedKomaStates.Kaku, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Uma, index, isSente, onBoard).nari(clickedKomaStates.Uma)))
-    case Some((Koma(clickedKomaStates.Hisha, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Ryu, index, isSente, onBoard).nari(clickedKomaStates.Ryu)))
+    case Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.To, index, isSente, onBoard).nari(ClickedKomaState.To)))
+    case Some((Koma(ClickedKomaState.Kyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariKyo, index, isSente, onBoard).nari(ClickedKomaState.NariKyo)))
+    case Some((Koma(ClickedKomaState.Kei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariKei, index, isSente, onBoard).nari(ClickedKomaState.NariKei)))
+    case Some((Koma(ClickedKomaState.Gin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariGin, index, isSente, onBoard).nari(ClickedKomaState.NariGin)))
+    case Some((Koma(ClickedKomaState.Kaku, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.Uma, index, isSente, onBoard).nari(ClickedKomaState.Uma)))
+    case Some((Koma(ClickedKomaState.Hisha, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.Ryu, index, isSente, onBoard).nari(ClickedKomaState.Ryu)))
 
     case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
@@ -49,12 +49,12 @@ case class Board(komas: List[Koma]) {
 
   //成っていた駒が取られて持ち駒になるときは、再度成る前の状態に戻す
   def returnNariKoma(place: Int): Board = komas.zipWithIndex.find(_._1.index == place) match {
-    case Some((Koma(clickedKomaStates.To, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.To, index, isSente, onBoard).nari(clickedKomaStates.Fu)))
-    case Some((Koma(clickedKomaStates.NariKyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKyo, index, isSente, onBoard).nari(clickedKomaStates.Kyo)))
-    case Some((Koma(clickedKomaStates.NariKei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariKei, index, isSente, onBoard).nari(clickedKomaStates.Kei)))
-    case Some((Koma(clickedKomaStates.NariGin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.NariGin, index, isSente, onBoard).nari(clickedKomaStates.Gin)))
-    case Some((Koma(clickedKomaStates.Uma, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Uma, index, isSente, onBoard).nari(clickedKomaStates.Kaku)))
-    case Some((Koma(clickedKomaStates.Ryu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(clickedKomaStates.Ryu, index, isSente, onBoard).nari(clickedKomaStates.Hisha)))
+    case Some((Koma(ClickedKomaState.To, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.To, index, isSente, onBoard).nari(ClickedKomaState.Fu)))
+    case Some((Koma(ClickedKomaState.NariKyo, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariKyo, index, isSente, onBoard).nari(ClickedKomaState.Kyo)))
+    case Some((Koma(ClickedKomaState.NariKei, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariKei, index, isSente, onBoard).nari(ClickedKomaState.Kei)))
+    case Some((Koma(ClickedKomaState.NariGin, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.NariGin, index, isSente, onBoard).nari(ClickedKomaState.Gin)))
+    case Some((Koma(ClickedKomaState.Uma, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.Uma, index, isSente, onBoard).nari(ClickedKomaState.Kaku)))
+    case Some((Koma(ClickedKomaState.Ryu, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(ClickedKomaState.Ryu, index, isSente, onBoard).nari(ClickedKomaState.Hisha)))
     case Some((Koma(kind, index, isSente, onBoard), i)) => Board(komas.updated(i, Koma(kind, index, isSente, onBoard))) //成り駒ではないときは何もしなくてOK
     case None => this
   }
@@ -62,7 +62,7 @@ case class Board(komas: List[Koma]) {
   /** 歩を打つときの二歩チェック */
   case class NifuCheck(kind: String, isSente: Boolean, onBoard: Boolean)
   def nifuCheck(now: Int, isSenteInput: Boolean): Boolean = {
-    komas.forall(koma => column(koma.index) != column(now) || koma.kind != clickedKomaStates.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
+    komas.forall(koma => column(koma.index) != column(now) || koma.kind != ClickedKomaState.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
   }
 
   /** 上にどれだけ動けるか */
