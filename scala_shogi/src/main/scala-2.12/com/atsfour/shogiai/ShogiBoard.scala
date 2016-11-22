@@ -9,9 +9,9 @@ import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
 import scalafx.scene.{Group, Scene}
 
+//todo 一手前の局面を保持するようにしたい
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
-
   var board: Board = Board(List( //初期の駒配置
     Koma(ClickedKomaState.Fu, 18, false, true), Koma(ClickedKomaState.Fu, 19, false, true), Koma(ClickedKomaState.Fu, 20, false, true),
     Koma(ClickedKomaState.Fu, 21, false, true), Koma(ClickedKomaState.Fu, 22, false, true), Koma(ClickedKomaState.Fu, 23, false, true),
@@ -25,7 +25,8 @@ object ShogiBoard extends JFXApp {
     Koma(ClickedKomaState.Kyo, 72, true, true), Koma(ClickedKomaState.Kei, 73, true, true), Koma(ClickedKomaState.Gin, 74, true, true), Koma(ClickedKomaState.Kin, 75, true, true),
     Koma(ClickedKomaState.Fu, 62, true, true), Koma(ClickedKomaState.Fu, 61, true, true), Koma(ClickedKomaState.Fu, 60, true, true),
     Koma(ClickedKomaState.Fu, 59, true, true), Koma(ClickedKomaState.Fu, 58, true, true), Koma(ClickedKomaState.Fu, 57, true, true),
-    Koma(ClickedKomaState.Fu, 56, true, true), Koma(ClickedKomaState.Fu, 55, true, true), Koma(ClickedKomaState.Fu, 54, true, true)
+    Koma(ClickedKomaState.Fu, 56, true, true), Koma(ClickedKomaState.Fu, 55, true, true), Koma(ClickedKomaState.Fu, 54, true, true),
+    Koma(ClickedKomaState.Fu, 83, false, false), Koma(ClickedKomaState.Fu, 134, true, false), Koma(ClickedKomaState.Fu, 120, true, false)
   ))
 
   //todo Stateを減らしたい
@@ -73,57 +74,77 @@ object ShogiBoard extends JFXApp {
     case object Ta extends ClickedKomaState("タ")
     case object A extends ClickedKomaState("ー")
     case object N extends ClickedKomaState("ン")
+    case object Ni extends ClickedKomaState("二")
+    case object De extends ClickedKomaState("で")
+    case object Su extends ClickedKomaState("す")
 
     lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu, Sen, Go, Te, No, Ka, Chi, Bikkuri, V, S, Not, Na, Ri, Slash, O, R, Ta, A, N)
   }
 
+  //todo 2歩の場合は、"先手2歩です"と表示する
   /** 将棋盤のテンプレートの切り替え */
-  var (isWin, isCanNari) = (false, false)
+  var (isWin, isCanNari, isNifu) = (false, false, false)
   def boardSwitch :Board = {
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
     val displayKoma: Boolean = true
-    board = (isWin, isCanNari, isSenteTurnState) match { //1手指すと出てくる
-      case (false, false  ,true) => {
+    board = (isWin, isCanNari, isNifu, isSenteTurnState) match { //1手指すと出てくる
+      case (false, false, false ,true) => {
         val normalBoard: Board = Board( //先手のターン
           Koma(ClickedKomaState.Sen, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.No, 107, isSenteTurnState, displayKoma) ::
             (Koma(ClickedKomaState.Ta, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.A, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.N, 110, isSenteTurnState, displayKoma) ::
               realKomas))
         normalBoard
       }
-      case (false, false , false) => {
+      case (false, false, false ,false) => {
         val normalBoard: Board = Board( //後手のターン
           Koma(ClickedKomaState.Go, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.No, 107, isSenteTurnState, displayKoma) ::
             (Koma(ClickedKomaState.Ta, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.A, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.N, 110, isSenteTurnState, displayKoma) ::
               realKomas))
         normalBoard
       }
-      case (true, _ , false) => { //駒を取った時には後手の番に移っている
+      case (true, _, _, false) => { //駒を取った時には後手の番に移っている
       val SenteWinBoard: Board = Board( //先手の勝ち！
           Koma(ClickedKomaState.Sen, 105, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, !isSenteTurnState, displayKoma):: Koma(ClickedKomaState.No, 107, !isSenteTurnState, displayKoma) ::
             (Koma(ClickedKomaState.Ka, 108, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Bikkuri, 110, !isSenteTurnState, displayKoma) ::
               realKomas))
         SenteWinBoard
       }
-      case (true, _ , true) => {
+      case (true, _, _, true) => {
         val GoteWinboard: Board = Board( //後手の勝ち！
           Koma(ClickedKomaState.Go, 105, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, !isSenteTurnState, displayKoma):: Koma(ClickedKomaState.No, 107, !isSenteTurnState, displayKoma) ::
             (Koma(ClickedKomaState.Ka, 108, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Bikkuri, 110, !isSenteTurnState, displayKoma) ::
               realKomas))
         GoteWinboard
       }
-      case (_, true , true) => {
+      case (_, true, _, true) => {
         val SenteWinBoard: Board = Board( // 成りor不成
           Koma(ClickedKomaState.Na, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.O, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.R, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) ::
             realKomas)
         SenteWinBoard
       }
-      case (_, true , false) => {
+      case (_, true, _, false) => {
         val GoteWinboard: Board = Board( // 成りor不成
           Koma(ClickedKomaState.Na, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.O, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.R, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) :: realKomas)
         GoteWinboard
       }
+      case (_, _, true, true) => {
+        val SenteNifuBoard: Board = Board( //先手二歩です
+          Koma(ClickedKomaState.Sen, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) ::
+            (Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
+              realKomas))
+        SenteNifuBoard
+      }
+      case (_, _, true, false) => {
+        val GoteNifuboard: Board = Board( //後手二歩です
+          Koma(ClickedKomaState.Go, 105, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 106, isSenteTurnState, displayKoma):: Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) ::
+            (Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
+              realKomas))
+        GoteNifuboard
+      }
+
+
       case _ => {
         val normalBoard: Board = Board(realKomas)
         normalBoard
@@ -370,6 +391,7 @@ object ShogiBoard extends JFXApp {
       }
     }
 
+    //todo ClickCancelのタイミングを変える
     /** 駒に応じて、動けるかどうかを判定する関数 */
     def canMove(koma: ClickedKomaState, num: Int): Boolean = {
       val canMove: Boolean = {
@@ -433,6 +455,8 @@ object ShogiBoard extends JFXApp {
     /** 手持ちの駒を盤面に打つ時に行う処理 */
     def useHandKomaFlow(num: Int) = {
       fromHandToBoradAddState
+      if (toMoveBoard && optIsSenteKoma.isEmpty &&
+        !(clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))) isNifu = true
       if (canSetFromHand) playAndInitialize(num)
       else clickCancel
     }
@@ -498,6 +522,7 @@ object ShogiBoard extends JFXApp {
         case None => selectedCellIndex = Some(clickedIndex)
       }
       boardSwitch
+      isNifu = false
       repaint
     })
     group

@@ -5,8 +5,7 @@ import ShogiBoard.ClickedKomaState
 case class Board(komas: List[Koma]) {
 
   //todo 棋譜を読み込めるように、将棋盤の表示形式を工夫したい
-  //todo お互いの駒の点数チェックを行える関数作成
-  /* 場所をList形式で取得したものから、komas.findし、今の場所を取得する */
+  //todo お互いの駒の点数チェックを行う関数作成
   val cellIndice = (0 until 136).toList
   val cells: List[Option[Koma]] = cellIndice.map { n => komas.find(_.index == n) }
 
