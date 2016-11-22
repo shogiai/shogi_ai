@@ -98,8 +98,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      column(koma.index) - row(koma.index) <= toColumn - toRow ||
-      column(koma.index) - row(koma.index) >= nowColumn - nowRow || !koma.onBoard)
+      nowColumn >= column(koma.index) ||
+      toColumn <= column(koma.index) || !koma.onBoard)
   }
 
   /** 左下方向にどれだけ動けるか */
@@ -107,8 +107,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      column(koma.index) - row(koma.index) >= toColumn - toRow ||
-      column(koma.index) - row(koma.index) <= nowColumn - nowRow || !koma.onBoard)
+      toColumn >= column(koma.index) ||
+      nowColumn <= column(koma.index) || !koma.onBoard)
   }
 
   /** 左上方向にどれだけ動けるか */
@@ -116,8 +116,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      column(koma.index) + row(koma.index) <= toColumn + toRow ||
-      column(koma.index) + row(koma.index) >= nowColumn + nowRow || !koma.onBoard)
+      toColumn >= column(koma.index) ||
+      nowColumn <= column(koma.index) || !koma.onBoard)
   }
 
   /** 右下方向にどれだけ動けるか */
@@ -125,8 +125,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      column(koma.index) + row(koma.index) >= toColumn + toRow ||
-      column(koma.index) + row(koma.index) <= nowColumn + nowRow || !koma.onBoard)
+      nowColumn >= column(koma.index) ||
+      toColumn <= column(koma.index) || !koma.onBoard)
   }
 
 }
