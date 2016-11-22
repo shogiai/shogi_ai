@@ -1,5 +1,6 @@
 package com.atsfour.shogiai
 
+import scala.util.Random
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
 import scalafx.scene.control.Label
@@ -605,7 +606,7 @@ object ShogiBoard extends JFXApp {
     obj
   }
 
-  def allRandomBoard: Board = { //A
+  def allRandomBoard: Board = { //D
     val Zone = (0 until 80).toList
     val KomaPlace: List[Int] = scala.util.Random.shuffle(Zone)
     val allRandomBoard: Board = Board(List( //歩の下でランダムな初期の駒配置
@@ -624,30 +625,42 @@ object ShogiBoard extends JFXApp {
       Koma(ClickedKomaState.Fu, KomaPlace(34), true, true), Koma(ClickedKomaState.Fu, KomaPlace(35), true, true), Koma(ClickedKomaState.Fu, KomaPlace(36), true, true),
       Koma(ClickedKomaState.Fu, KomaPlace(37), true, true), Koma(ClickedKomaState.Fu, KomaPlace(38), true, true), Koma(ClickedKomaState.Fu, KomaPlace(39), true, true)
     ))
+    val allRandomKomas: List[Koma] = allRandomBoard match { case Board(komas) => komas }
     allRandomBoard
   }
-  def halfRandomBoard: Board = { //B
+
+  def halfRandomBoard: Board = { //C
     val (senteZone, goteZone) = ((0 until 35).toList, (45 until 80).toList)
-    val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
+    val r = new Random
+
+    val senteFuPlace = List(r.nextInt(3) * 9 + 0, r.nextInt(3) * 9 + 1, r.nextInt(3) * 9 + 2, r.nextInt(3) * 9 + 3, r.nextInt(3) * 9 + 4,
+      r.nextInt(3) * 9 + 5, r.nextInt(3) * 9 + 6, r.nextInt(3) * 9 + 7, r.nextInt(3) * 9 + 8)
+    val senteWithoutFuPlace: List[Int] = scala.util.Random.shuffle(senteZone diff senteFuPlace)
+
+    val goteFuPlace = List( (r.nextInt(3) + 6) * 9 + 0, (r.nextInt(3) + 6) * 9 + 1, (r.nextInt(3) + 6) * 9 + 2, (r.nextInt(3) + 6) * 9 + 3, (r.nextInt(3) + 6) * 9 + 4,
+        (r.nextInt(3) + 6) * 9 + 5, (r.nextInt(3) + 6) * 9 + 6, (r.nextInt(3) + 6) * 9 + 7, (r.nextInt(3) + 6) * 9 + 8)
+    val goteWithoutFuPlace: List[Int] = scala.util.Random.shuffle(goteZone diff goteFuPlace)
+
     val newInitalBoard: Board = Board(List( //歩の下でランダムな初期の駒配置
-      Koma(ClickedKomaState.Fu, senteKomaPlace(11), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(12), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(13), false, true),
-      Koma(ClickedKomaState.Fu, senteKomaPlace(14), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(15), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(16), false, true),
-      Koma(ClickedKomaState.Fu, senteKomaPlace(17), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(18), false, true), Koma(ClickedKomaState.Fu, senteKomaPlace(19), false, true),
-      Koma(ClickedKomaState.Kyo, senteKomaPlace(0), false, true), Koma(ClickedKomaState.Kei, senteKomaPlace(1), false, true),
-      Koma(ClickedKomaState.Gin, senteKomaPlace(2), false, true), Koma(ClickedKomaState.Kin, senteKomaPlace(3), false, true), Koma(ClickedKomaState.Ou, senteKomaPlace(4), false, true),
-      Koma(ClickedKomaState.Kyo, senteKomaPlace(5), false, true), Koma(ClickedKomaState.Kei, senteKomaPlace(6), false, true), Koma(ClickedKomaState.Gin, senteKomaPlace(7), false, true), Koma(ClickedKomaState.Kin, senteKomaPlace(8), false, true),
-      Koma(ClickedKomaState.Hisha, senteKomaPlace(9), false, true), Koma(ClickedKomaState.Kaku, senteKomaPlace(10), false, true),
-      Koma(ClickedKomaState.Hisha, goteKomaPlace(9), true, true), Koma(ClickedKomaState.Kaku, goteKomaPlace(10), true, true),
-      Koma(ClickedKomaState.Kyo, goteKomaPlace(0), true, true), Koma(ClickedKomaState.Kei, goteKomaPlace(1), true, true),
-      Koma(ClickedKomaState.Gin, goteKomaPlace(2), true, true), Koma(ClickedKomaState.Kin, goteKomaPlace(3), true, true), Koma(ClickedKomaState.Ou, goteKomaPlace(4), true, true),
-      Koma(ClickedKomaState.Kyo, goteKomaPlace(5), true, true), Koma(ClickedKomaState.Kei, goteKomaPlace(6), true, true), Koma(ClickedKomaState.Gin, goteKomaPlace(7), true, true), Koma(ClickedKomaState.Kin, goteKomaPlace(8), true, true),
-      Koma(ClickedKomaState.Fu, goteKomaPlace(11), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(12), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(13), true, true),
-      Koma(ClickedKomaState.Fu, goteKomaPlace(14), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(15), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(16), true, true),
-      Koma(ClickedKomaState.Fu, goteKomaPlace(17), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(18), true, true), Koma(ClickedKomaState.Fu, goteKomaPlace(19), true, true)
+      Koma(ClickedKomaState.Fu, senteFuPlace(0), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(1), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(2), false, true),
+      Koma(ClickedKomaState.Fu, senteFuPlace(3), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(4), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(5), false, true),
+      Koma(ClickedKomaState.Fu, senteFuPlace(6), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(7), false, true), Koma(ClickedKomaState.Fu, senteFuPlace(8), false, true),
+      Koma(ClickedKomaState.Kyo, senteWithoutFuPlace(0), false, true), Koma(ClickedKomaState.Kei, senteWithoutFuPlace(1), false, true),
+      Koma(ClickedKomaState.Gin, senteWithoutFuPlace(2), false, true), Koma(ClickedKomaState.Kin, senteWithoutFuPlace(3), false, true), Koma(ClickedKomaState.Ou, senteWithoutFuPlace(4), false, true),
+      Koma(ClickedKomaState.Kyo, senteWithoutFuPlace(5), false, true), Koma(ClickedKomaState.Kei, senteWithoutFuPlace(6), false, true), Koma(ClickedKomaState.Gin, senteWithoutFuPlace(7), false, true), Koma(ClickedKomaState.Kin, senteWithoutFuPlace(8), false, true),
+      Koma(ClickedKomaState.Hisha, senteWithoutFuPlace(9), false, true), Koma(ClickedKomaState.Kaku, senteWithoutFuPlace(10), false, true),
+
+      Koma(ClickedKomaState.Hisha, goteWithoutFuPlace(0), true, true), Koma(ClickedKomaState.Kaku, goteWithoutFuPlace(1), true, true),
+      Koma(ClickedKomaState.Kyo, goteWithoutFuPlace(2), true, true), Koma(ClickedKomaState.Kei, goteWithoutFuPlace(3), true, true),
+      Koma(ClickedKomaState.Gin, goteWithoutFuPlace(4), true, true), Koma(ClickedKomaState.Kin, goteWithoutFuPlace(5), true, true), Koma(ClickedKomaState.Ou, goteWithoutFuPlace(6), true, true),
+      Koma(ClickedKomaState.Kyo, goteWithoutFuPlace(7), true, true), Koma(ClickedKomaState.Kei, goteWithoutFuPlace(8), true, true), Koma(ClickedKomaState.Gin, goteWithoutFuPlace(9), true, true), Koma(ClickedKomaState.Kin, goteWithoutFuPlace(10), true, true),
+      Koma(ClickedKomaState.Fu, goteFuPlace(0), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(1), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(2), true, true),
+      Koma(ClickedKomaState.Fu, goteFuPlace(3), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(4), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(5), true, true),
+      Koma(ClickedKomaState.Fu, goteFuPlace(6), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(7), true, true), Koma(ClickedKomaState.Fu, goteFuPlace(8), true, true)
     ))
     newInitalBoard
   }
-  def newUnderFuInitalBoard: Board = { //C
+  def newUnderFuInitalBoard: Board = { //B
     val (senteZone, goteZone) = ((0 until 17).toList, (63 until 80).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
     val newInitalBoard: Board = Board(List( //歩の下でランダムな初期の駒配置
@@ -668,7 +681,7 @@ object ShogiBoard extends JFXApp {
     ))
     newInitalBoard
   }
-  def initalBoard: Board = Board(List( //D
+  def initalBoard: Board = Board(List( //A
     Koma(ClickedKomaState.Fu, 18, false, true), Koma(ClickedKomaState.Fu, 19, false, true), Koma(ClickedKomaState.Fu, 20, false, true),
     Koma(ClickedKomaState.Fu, 21, false, true), Koma(ClickedKomaState.Fu, 22, false, true), Koma(ClickedKomaState.Fu, 23, false, true),
     Koma(ClickedKomaState.Fu, 24, false, true), Koma(ClickedKomaState.Fu, 25, false, true), Koma(ClickedKomaState.Fu, 26, false, true),
