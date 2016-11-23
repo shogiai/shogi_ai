@@ -60,8 +60,6 @@ object ShogiBoard extends JFXApp {
     case object Not extends ClickedKomaState("不")
     case object Na extends ClickedKomaState("成")
     case object Ri extends ClickedKomaState("り")
-    case object O extends ClickedKomaState("o")
-    case object R extends ClickedKomaState("r")
     case object Slash extends ClickedKomaState("/")
 
     case object Ban extends ClickedKomaState("番")
@@ -314,8 +312,8 @@ object ShogiBoard extends JFXApp {
 
     //持ち駒をどこに置くかを決める, 持ち駒をソートする機能があると見栄えが良い
     def handMove: Int = {
-      val senteHand = (111 until 135).toList
-      val goteHand = (81 until 105).toList
+      val senteHand = (111 to 134).toList
+      val goteHand = (81 to 104).toList
       isSenteTurnState match {
         case true => {
           senteHand.filter(senteHandsPlace => board.findKoma(senteHandsPlace).isEmpty && (senteHandsPlace - 81) % 6 != 0).last
@@ -383,7 +381,10 @@ object ShogiBoard extends JFXApp {
         board = board.nariKoma(num) //強制的に成り、相手の手番へ
         isSenteTurnState = switchTurn(isSenteTurnState)
       }
-      else if (canNari(num)) addNariGomaState //どこにいる駒が成れる状態、という状態を付与
+      else if (canNari(num)) {  //どこにいる駒が成れる状態、という状態を付与
+        addNariGomaState
+        if (isWin) isSenteTurnState = switchTurn(isSenteTurnState)
+      }
       else isSenteTurnState = switchTurn(isSenteTurnState) //成れない場合は相手の手番へ
 
       board = board.moveKoma(num, clickedIndex)
@@ -403,10 +404,12 @@ object ShogiBoard extends JFXApp {
         case true => {
           if (optIsSenteKoma.contains(false)) takeKoma(clickedIndex)
           if (!optIsSenteKoma.contains(true)) playAndInitialize(num)
+          else clickCancel
         }
         case false => {
           if (optIsSenteKoma.contains(true)) takeKoma(clickedIndex)
           if (!optIsSenteKoma.contains(false)) playAndInitialize(num)
+          else clickCancel
         }
       }
     }
@@ -425,7 +428,6 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    //todo ClickCancelのタイミングを変える
     /** 駒に応じて、動けるかどうかを判定する関数 */
     def canMove(koma: ClickedKomaState, num: Int): Boolean = {
       val canMove: Boolean = {
@@ -544,7 +546,9 @@ object ShogiBoard extends JFXApp {
           /** 持ち駒をクリックして盤面に打つ場合の処理 */
           else if (useHandKomaBranch) useHandKomaFlow(num)
           /** 盤面の歩を移動させる場合の処理 */
-          else if (inBoardKomaBranch(ClickedKomaState.Fu)) inBordKomaMoveFlow(ClickedKomaState.Fu, num)
+          else if (inBoardKomaBranch(ClickedKomaState.Fu)) {
+            inBordKomaMoveFlow(ClickedKomaState.Fu, num)
+          }
           /** 香車の場合 */
           else if (inBoardKomaBranch(ClickedKomaState.Kyo)) inBordKomaMoveFlow(ClickedKomaState.Kyo, num)
           /** 桂馬の場合 */
@@ -616,7 +620,7 @@ object ShogiBoard extends JFXApp {
   }
 
   def allRandomBoard: Board = { //D
-    def randomRow: List[Int] = scala.util.Random.shuffle((1 until 7).toList)
+    def randomRow: List[Int] = scala.util.Random.shuffle((1 to 7).toList)
     var stockFu: List[Int] = List()
 
     for (i <- 0 to 8) { //0筋〜8筋
@@ -626,33 +630,29 @@ object ShogiBoard extends JFXApp {
       stockFu = senteFuIndex :: goteFuIndex :: stockFu
     }
 
-    val possibleSenteKeiKyoIndex = scala.util.Random.shuffle((18 until 80).toList diff stockFu)
+    val possibleSenteKeiKyoIndex = scala.util.Random.shuffle((18 to 80).toList diff stockFu)
     val senteKeiKyoIndex = List(possibleSenteKeiKyoIndex(0),possibleSenteKeiKyoIndex(1),possibleSenteKeiKyoIndex(2),possibleSenteKeiKyoIndex(3)) //香車もあえてここに入れとく
 
-    val possibleGoteKeiKyoIndex = scala.util.Random.shuffle((0 until 62).toList diff stockFu diff senteKeiKyoIndex)
+    val possibleGoteKeiKyoIndex = scala.util.Random.shuffle((0 to 62).toList diff stockFu diff senteKeiKyoIndex)
     val goteKeiKyoIndex = List(possibleGoteKeiKyoIndex(0),possibleGoteKeiKyoIndex(1),possibleGoteKeiKyoIndex(2),possibleGoteKeiKyoIndex(3))
 
-    //王様が下から5段目以内にしないと捕まらない
-    val possibleSenteOuIndex = scala.util.Random.shuffle((36 until 80).toList diff stockFu diff senteKeiKyoIndex diff goteKeiKyoIndex)
-    val senteOuIndex = possibleSenteOuIndex.head
-    val possibleGoteOuIndex = scala.util.Random.shuffle((0 until 44).toList diff stockFu diff senteKeiKyoIndex diff goteKeiKyoIndex diff List(senteOuIndex))
-    val goteOuIndex = possibleGoteOuIndex.head
-
-    val possibleKomaIndex = scala.util.Random.shuffle((0 until 80).toList
-      diff stockFu diff senteKeiKyoIndex diff goteKeiKyoIndex diff List(senteOuIndex)  diff List(senteOuIndex)) //残りの駒はここから取る
+    val possibleKomaIndex = scala.util.Random.shuffle((0 to 80).toList diff stockFu diff senteKeiKyoIndex diff goteKeiKyoIndex) //残りの駒はここから取る
 
     val allRandomBoard: Board = Board(List(
       Koma(ClickedKomaState.Fu, stockFu(0), false, true), Koma(ClickedKomaState.Fu, stockFu(2), false, true), Koma(ClickedKomaState.Fu, stockFu(4), false, true),
       Koma(ClickedKomaState.Fu, stockFu(6), false, true), Koma(ClickedKomaState.Fu, stockFu(8), false, true), Koma(ClickedKomaState.Fu, stockFu(10), false, true),
       Koma(ClickedKomaState.Fu, stockFu(12), false, true), Koma(ClickedKomaState.Fu, stockFu(14), false, true), Koma(ClickedKomaState.Fu, stockFu(16), false, true),
+
       Koma(ClickedKomaState.Kyo, goteKeiKyoIndex(0), false, true), Koma(ClickedKomaState.Kei, goteKeiKyoIndex(1), false, true),
-      Koma(ClickedKomaState.Gin, possibleKomaIndex(0), false, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(1), false, true), Koma(ClickedKomaState.Ou, goteOuIndex, false, true),
-      Koma(ClickedKomaState.Kyo, goteKeiKyoIndex(2), false, true), Koma(ClickedKomaState.Kei, goteKeiKyoIndex(3), false, true), Koma(ClickedKomaState.Gin, possibleKomaIndex(12), false, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(3), false, true),
-      Koma(ClickedKomaState.Hisha, possibleKomaIndex(4), false, true), Koma(ClickedKomaState.Kaku, possibleKomaIndex(5), false, true),
-      Koma(ClickedKomaState.Hisha, possibleKomaIndex(6), true, true), Koma(ClickedKomaState.Kaku, possibleKomaIndex(7), true, true),
+      Koma(ClickedKomaState.Gin, possibleKomaIndex(0), false, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(1), false, true), Koma(ClickedKomaState.Ou, possibleKomaIndex(2), false, true),
+      Koma(ClickedKomaState.Kyo, goteKeiKyoIndex(2), false, true), Koma(ClickedKomaState.Kei, goteKeiKyoIndex(3), false, true), Koma(ClickedKomaState.Gin, possibleKomaIndex(4), false, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(3), false, true),
+      Koma(ClickedKomaState.Hisha, possibleKomaIndex(5), false, true), Koma(ClickedKomaState.Kaku, possibleKomaIndex(6), false, true),
+
+      Koma(ClickedKomaState.Hisha, possibleKomaIndex(8), true, true), Koma(ClickedKomaState.Kaku, possibleKomaIndex(9), true, true),
       Koma(ClickedKomaState.Kyo, senteKeiKyoIndex(0), true, true), Koma(ClickedKomaState.Kei, senteKeiKyoIndex(1), true, true),
-      Koma(ClickedKomaState.Gin, possibleKomaIndex(8), true, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(9), true, true), Koma(ClickedKomaState.Ou, senteOuIndex, true, true),
-      Koma(ClickedKomaState.Kyo, senteKeiKyoIndex(2), true, true), Koma(ClickedKomaState.Kei, senteKeiKyoIndex(3), true, true), Koma(ClickedKomaState.Gin, possibleKomaIndex(11), true, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(12), true, true),
+      Koma(ClickedKomaState.Gin, possibleKomaIndex(10), true, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(11), true, true), Koma(ClickedKomaState.Ou, possibleKomaIndex(12), true, true),
+      Koma(ClickedKomaState.Kyo, senteKeiKyoIndex(2), true, true), Koma(ClickedKomaState.Kei, senteKeiKyoIndex(3), true, true), Koma(ClickedKomaState.Gin, possibleKomaIndex(7), true, true), Koma(ClickedKomaState.Kin, possibleKomaIndex(13), true, true),
+
       Koma(ClickedKomaState.Fu, stockFu(1), true, true), Koma(ClickedKomaState.Fu, stockFu(3), true, true), Koma(ClickedKomaState.Fu, stockFu(5), true, true),
       Koma(ClickedKomaState.Fu, stockFu(7), true, true), Koma(ClickedKomaState.Fu, stockFu(9), true, true), Koma(ClickedKomaState.Fu, stockFu(11), true, true),
       Koma(ClickedKomaState.Fu, stockFu(13), true, true), Koma(ClickedKomaState.Fu, stockFu(15), true, true), Koma(ClickedKomaState.Fu, stockFu(17), true, true)
@@ -661,7 +661,7 @@ object ShogiBoard extends JFXApp {
   }
 
   def halfRandomBoard: Board = { //C
-    val (senteZone, goteZone) = ((0 until 35).toList, (45 until 80).toList)
+    val (senteZone, goteZone) = ((0 to 35).toList, (45 to 80).toList)
     val r = new Random
 
     val senteFuPlace = List(r.nextInt(3) * 9 + 0, r.nextInt(3) * 9 + 1, r.nextInt(3) * 9 + 2, r.nextInt(3) * 9 + 3, r.nextInt(3) * 9 + 4,
@@ -692,7 +692,7 @@ object ShogiBoard extends JFXApp {
     newInitalBoard
   }
   def newUnderFuInitalBoard: Board = { //B
-    val (senteZone, goteZone) = ((0 until 17).toList, (63 until 80).toList)
+    val (senteZone, goteZone) = ((0 to 17).toList, (63 to 80).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
     val newInitalBoard: Board = Board(List( //歩の下でランダムな初期の駒配置
       Koma(ClickedKomaState.Fu, 18, false, true), Koma(ClickedKomaState.Fu, 19, false, true), Koma(ClickedKomaState.Fu, 20, false, true),
