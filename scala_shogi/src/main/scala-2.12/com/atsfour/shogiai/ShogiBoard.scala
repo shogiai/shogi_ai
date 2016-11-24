@@ -312,16 +312,103 @@ object ShogiBoard extends JFXApp {
 
     //持ち駒をどこに置くかを決める, 持ち駒をソートする機能があると見栄えが良い
     def handMove: Int = {
-      val senteHand = (111 to 134).toList
-      val goteHand = (81 to 104).toList
-      isSenteTurnState match {
-        case true => {
-          senteHand.filter(senteHandsPlace => board.findKoma(senteHandsPlace).isEmpty && (senteHandsPlace - 81) % 6 != 0).last
+      val senteHand = (111 to 133).toList
+      val goteHand = (81 to 103).toList
+      val overallBoard = (133 to 0).toList
+
+      val senteHandPlace = senteHand.filter(senteHandsPlace => board.findKoma(senteHandsPlace).isEmpty && (senteHandsPlace - 81) % 6 != 0)
+      val goteHandPlace = goteHand.filter(goteHandsPlace => board.findKoma(goteHandsPlace).isEmpty && (goteHandsPlace - 81) % 6 != 0)
+
+      var isSenteHandOver = false
+      var isGoteHandOver = false
+      //val onBoardKomas: List[Koma] = board match { case Board(komas) => komas }
+
+      (senteHandPlace.length, goteHandPlace.length) match { //両方0は起こり得ない
+        case (0, _) => {
+
+          //歩、香車、桂馬を1か所にまとめる場所を決める
+          val fuPlace :Int = {
+            senteHand.foreach(i => board.findKoma(i) match { case Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i)) => index })
+            fuPlace
+          }
+          val kyoPlace :Int = {
+            senteHand.foreach(i => board.findKoma(i) match { case Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i)) => index })
+            kyoPlace
+          }
+          val keiPlace :Int = {
+            senteHand.foreach(i => board.findKoma(i) match { case Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i)) => index })
+            keiPlace
+          }
+
+          //board全体に対して、持ち駒の歩、香車、桂馬を1か所にまとめる
+          isSenteHandOver = true
+          val onBoardKomas: List[Koma] = board match { case Board(komas) => komas }
+
+          //findKoma自体がNoneを返す・・
+          var stock: List[Koma] = board match { case Board(komas) => komas }
+          val replaceHand = {
+            overallBoard.foreach { i => //先手の歩、桂馬、香車を1か所にまとめる
+              val aaa: Some[Koma] = {
+                board.findKoma(i) match {
+                  case Some((Koma(ClickedKomaState.Fu, index, isSente, false), i)) => Some(Koma(ClickedKomaState.Fu, fuPlace, isSente, false))
+                  case Some((Koma(ClickedKomaState.Kei, index, isSente, false), i)) => Some(Koma(ClickedKomaState.Fu, kyoPlace, isSente, false))
+                  case Some((Koma(ClickedKomaState.Kyo, index, isSente, false), i)) => Some(Koma(ClickedKomaState.Fu, keiPlace, isSente, false))
+                  case Some((Koma(kind, index, isSente, onBoard), i)) => Some(Koma(kind, index, isSente, onBoard))
+                }
+                stock = aaa :: stock
+              }
+            }
+          }
+          board = replaceHand
+
+
+          isSenteTurnState match {
+            case true => senteHandPlace.last
+            case false => goteHandPlace.head
+          }
         }
-        case false => {
-          goteHand.filter(goteHandsPlace => board.findKoma(goteHandsPlace).isEmpty && (goteHandsPlace - 81) % 6 != 0).head
+
+        case (_, 0) => {
+          isSenteTurnState match {
+            case true => senteHandPlace.last
+            case false => goteHandPlace.head
+          }
+        }
+
+        case (_, _) => isSenteTurnState match {
+            case true => senteHandPlace.last
+            case false => goteHandPlace.head
+        }
+
+      }
+
+      /*
+      if (senteHandPlace.nonEmpty && goteHandPlace.nonEmpty) { //両方空きがある場合
+        isSenteTurnState match {
+          case true => senteHandPlace.last
+          case false => goteHandPlace.head
         }
       }
+      else if (senteHandPlace.isEmpty && goteHandPlace.nonEmpty) { //先手に空きがない場合
+        //全ての持ち駒に対して実行
+        board.findKoma(111) match {
+          case Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i)) => Some((Koma(ClickedKomaState.Fu, index, isSente, onBoard), i))
+          case None => this
+        }
+        isSenteTurnState match {
+          case true => 134
+          case false => goteHandPlace.head
+        }
+      }
+      else if (senteHandPlace.nonEmpty && goteHandPlace.isEmpty) { //先手に空きがない場合
+        isSenteTurnState match {
+          case true => senteHandPlace.last
+          case false => 81
+        }
+      }
+      */
+
+
     }
 
     def takeOuCheck(clickedIndex: Int) = {
@@ -576,7 +663,7 @@ object ShogiBoard extends JFXApp {
           /** 龍の場合 */
           else if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu, num)
 
-          // デバッグ用
+          //デバッグ用
           println("existSelectedCellIndex:" + existSelectedCellIndex, "selectedCellIndex:" + selectedCellIndex, "stockNariIndex:" + stockNariIndex)
           println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
           println("optIsSenteKoma:" + optIsSenteKoma, "optIsSenteKomaState:" + optIsSenteKomaState)
