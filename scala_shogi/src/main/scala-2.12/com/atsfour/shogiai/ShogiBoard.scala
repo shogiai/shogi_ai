@@ -109,23 +109,22 @@ object ShogiBoard extends JFXApp {
     /** その他テンプレートの更新 */
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
     val displayKoma: Boolean = true
-    board = (isWin, isCanNari, isNifu, isSenteTurnState) match {
-      //1手指すと出てくる
+    board = (isWin, isCanNari, isNifu, isSenteTurnState) match { //1手指すと出てくる
       case (false, false, false, true) => {
-        val normalBoard: Board = Board(//先手番
+        val normalBoard: Board = Board( //先手番
           Koma(ClickedKomaState.Sen, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 109, isSenteTurnState, displayKoma) ::
             realKomas)
         normalBoard
       }
       case (false, false, false, false) => {
-        val normalBoard: Board = Board(//後手番
+        val normalBoard: Board = Board( //後手番
           Koma(ClickedKomaState.Go, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 109, isSenteTurnState, displayKoma) ::
             realKomas)
         normalBoard
       }
       case (true, _, _, false) => {
         //駒を取った時には後手の番に移っている
-        val SenteWinBoard: Board = Board( // 先手の勝ち
+        val SenteWinBoard: Board = Board( //先手の勝ち
           Koma(ClickedKomaState.Sen, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
             (Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) ::
               realKomas))
@@ -139,27 +138,27 @@ object ShogiBoard extends JFXApp {
         GoteWinboard
       }
       case (_, true, _, true) => {
-        val SenteWinBoard: Board = Board( // 成りor不成
+        val SenteWinBoard: Board = Board( //成りor不成
           Koma(ClickedKomaState.Na, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Slash, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) ::
             realKomas)
         SenteWinBoard
       }
       case (_, true, _, false) => {
-        val GoteWinboard: Board = Board( // 成りor不成
+        val GoteWinboard: Board = Board( //成りor不成
           Koma(ClickedKomaState.Na, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Slash, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) :: realKomas)
         GoteWinboard
       }
       case (_, _, true, true) => {
-        val SenteNifuBoard: Board = Board( // 二歩です
+        val SenteNifuBoard: Board = Board( //二歩です
           Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
             realKomas)
         SenteNifuBoard
       }
       case (_, _, true, false) => {
-        val GoteNifuboard: Board = Board( // 二歩です
+        val GoteNifuboard: Board = Board( //二歩です
           Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
             realKomas)
@@ -787,8 +786,8 @@ object ShogiBoard extends JFXApp {
     Koma(ClickedKomaState.Fu, 56, true, true), Koma(ClickedKomaState.Fu, 55, true, true), Koma(ClickedKomaState.Fu, 54, true, true)
   ))
 
-  //後手を全て持ち駒とする場合
-  def testBoard2: Board = Board(List( //仮装条件での検証用のBoard, 検証漏れが無いと言える?
+  //仮装条件での検証用のBoard
+  def goteTestBoard: Board = Board(List( //後手を全て持ち駒とする場合
     Koma(ClickedKomaState.Fu, 82, false, false), Koma(ClickedKomaState.Fu, 83, false, false), Koma(ClickedKomaState.Fu, 84, false, false),
     Koma(ClickedKomaState.Fu, 85, false, false), Koma(ClickedKomaState.Fu, 86, false, false), Koma(ClickedKomaState.Fu, 88, false, false),
     Koma(ClickedKomaState.Fu, 91, false, false), Koma(ClickedKomaState.Fu, 90, false, false), Koma(ClickedKomaState.Fu, 89, false, false),
@@ -805,9 +804,7 @@ object ShogiBoard extends JFXApp {
     Koma(ClickedKomaState.Fu, 56, true, true), Koma(ClickedKomaState.Fu, 55, true, true), Koma(ClickedKomaState.Fu, 54, true, true)
   ))
 
-  //先手を全て持ち駒とする場合
-  //111~134 => 111,117,123,129 は除外
-  def testBoard: Board = Board(List( //仮装条件での検証用のBoard, 検証漏れが無いと言える?
+  def senteTestBoard: Board = Board(List( //先手を全て持ち駒とする場合
     Koma(ClickedKomaState.Fu, 18, false, true), Koma(ClickedKomaState.Fu, 19, false, true), Koma(ClickedKomaState.Fu, 20, false, true),
     Koma(ClickedKomaState.Fu, 21, false, true), Koma(ClickedKomaState.Fu, 22, false, true), Koma(ClickedKomaState.Fu, 23, false, true),
     Koma(ClickedKomaState.Fu, 24, false, true), Koma(ClickedKomaState.Fu, 25, false, true), Koma(ClickedKomaState.Fu, 26, false, true),
