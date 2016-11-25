@@ -15,6 +15,9 @@ case class Board(komas: List[Koma]) {
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
+  def MovePlace(place: Int):Boolean = true
+
+
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))

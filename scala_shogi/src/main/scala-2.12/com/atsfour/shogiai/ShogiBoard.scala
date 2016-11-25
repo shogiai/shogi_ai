@@ -10,6 +10,7 @@ import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
 import scalafx.scene.{Group, Scene}
 
+//todo 駒の動きを表示
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
@@ -276,6 +277,16 @@ object ShogiBoard extends JFXApp {
   /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
+    /** 以下、駒をクリックした時に使う関数のまとまり */
+    /* clickedIndexと一致した場合の駒情報を取得する (komaの中のClickedIndexと一致する、という条件が必要(本当は)) */
+    val optClickedKomaKind: Option[ClickedKomaState] = komaOpt.map(koma => koma.kind)
+    val optIsSenteKoma: Option[Boolean] = komaOpt.map(koma => koma.isSente)
+    val optOnBoard: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
+
+    val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
+    val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
+    val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
+
     def toMoveBoard: Boolean = clickedIndex <= 80
     def handPlace: Boolean = (clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex-81) % 6 != 0 && (clickedIndex-81) / 6 != 4
 
@@ -283,8 +294,85 @@ object ShogiBoard extends JFXApp {
     def fromOutOfBoard(num: Int): Boolean = num >= 81 && num <= 134
     def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
 
+    //todo "0筋 => 9筋"への移動が可能
+    /** 駒に応じて、動けるかどうかを判定する関数 */
+    def canMove(koma: ClickedKomaState, num: Int): Boolean = {
+      val canMove: Boolean = {
+        if (isSenteTurnState) {
+          koma match {
+            case ClickedKomaState.Fu => moveDistance == 9 && toMoveBoard
+            case ClickedKomaState.Kyo => moveDistance % 9 == 0 && moveDistance > 0 && board.upJumpCheck(num, clickedIndex) && toMoveBoard
+            case ClickedKomaState.Kei => moveDistance == 17 || moveDistance == 19 && toMoveBoard
+            case ClickedKomaState.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) && toMoveBoard
+            case ClickedKomaState.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case ClickedKomaState.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
+            case ClickedKomaState.Kaku => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上から右下方向
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //右上から左下方向
+              && toMoveBoard)
+            case ClickedKomaState.Hisha => ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
+              && toMoveBoard)
+            case ClickedKomaState.To => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case ClickedKomaState.NariKyo => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case ClickedKomaState.NariKei => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case ClickedKomaState.NariGin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
+            case ClickedKomaState.Uma => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
+            case ClickedKomaState.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
+              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
+            case _ => false
+          }
+        } else {
+          koma match {
+            case ClickedKomaState.Fu => moveDistance == -9 && toMoveBoard
+            case ClickedKomaState.Kyo => moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, clickedIndex) && toMoveBoard
+            case ClickedKomaState.Kei => moveDistance == -17 || moveDistance == -19 && toMoveBoard
+            case ClickedKomaState.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) && toMoveBoard
+            case ClickedKomaState.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
+            case ClickedKomaState.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
+            case ClickedKomaState.Kaku => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+              && toMoveBoard)
+            case ClickedKomaState.Hisha => ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
+              && toMoveBoard)
+            case ClickedKomaState.To => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
+            case ClickedKomaState.NariKyo => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
+            case ClickedKomaState.NariKei => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
+            case ClickedKomaState.NariGin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
+            case ClickedKomaState.Uma => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
+              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
+              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
+            case ClickedKomaState.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
+              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
+              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
+            case _ => false
+          }
+        }
+      }
+      canMove
+    }
+
+    val isFillLightBulue: Boolean = selectedCellIndex.contains(clickedIndex) && clickedKomaKind != ClickedKomaState.None
+
+    def isThereSenteKoma(index: Int) = board.findKoma(index) match {
+      case Some((Koma(kind, index, isSente, onBoard), i)) => Some(isSente)
+      case None => None
+    }
+
+    def isNotFriendKoma(index: Int): Boolean = {
+      isSenteTurnState match {
+        case true => !isThereSenteKoma(index).contains(true)
+        case false => !isThereSenteKoma(index).contains(false)
+      }
+    }
+
+    //existSelectedCellIndex - clickedIndex どっちかだと思う
     /** Cellの描画を定義 */
-    val fillColor = if (selectedCellIndex.contains(clickedIndex) && clickedKomaKind != ClickedKomaState.None) LightBlue
+    val fillColor = if (isFillLightBulue) LightBlue
+    else if (canMove(clickedKomaKind, selectedCellIndex.getOrElse(200)) && isNotFriendKoma(clickedIndex)) AliceBlue
     else if (toMoveBoard || handPlace) Burlywood
     else White
 
@@ -295,16 +383,6 @@ object ShogiBoard extends JFXApp {
     }
 
     val group =  new Group { children = List(Some(grid), komaOpt.map(komaObjGroup)).flatten }
-
-    /** 以下、駒をクリックした時に使う関数のまとまり */
-    /* clickedIndexと一致した場合の駒情報を取得する (komaの中のClickedIndexと一致する、という条件が必要(本当は)) */
-    val optClickedKomaKind: Option[ClickedKomaState] = komaOpt.map(koma => koma.kind)
-    val optIsSenteKoma: Option[Boolean] = komaOpt.map(koma => koma.isSente)
-    val optOnBoard: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
-
-    val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
-    val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
-    val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
 
     /** クリック時にどの判定を行うべきか分岐 */
     def useHandKomaBranch: Boolean = {
@@ -505,65 +583,6 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    /** 駒に応じて、動けるかどうかを判定する関数 */
-    def canMove(koma: ClickedKomaState, num: Int): Boolean = {
-      val canMove: Boolean = {
-        if (isSenteTurnState) {
-          koma match {
-            case ClickedKomaState.Fu => moveDistance == 9 && toMoveBoard
-            case ClickedKomaState.Kyo => moveDistance % 9 == 0 && moveDistance > 0 && board.upJumpCheck(num, clickedIndex) && toMoveBoard
-            case ClickedKomaState.Kei => moveDistance == 17 || moveDistance == 19 && toMoveBoard
-            case ClickedKomaState.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9) && toMoveBoard
-            case ClickedKomaState.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case ClickedKomaState.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
-            case ClickedKomaState.Kaku => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex)) //左上から右下方向
-              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex)) //右上から左下方向
-              && toMoveBoard)
-            case ClickedKomaState.Hisha => ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
-              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
-              && toMoveBoard)
-            case ClickedKomaState.To => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case ClickedKomaState.NariKyo => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case ClickedKomaState.NariKei => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case ClickedKomaState.NariGin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10) && toMoveBoard
-            case ClickedKomaState.Uma => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
-              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
-            case ClickedKomaState.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
-              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
-              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
-            case _ => false
-          }
-        } else {
-          koma match {
-            case ClickedKomaState.Fu => moveDistance == -9 && toMoveBoard
-            case ClickedKomaState.Kyo => moveDistance % 9 == 0 && moveDistance < 0 && board.downJumpCheck(num, clickedIndex) && toMoveBoard
-            case ClickedKomaState.Kei => moveDistance == -17 || moveDistance == -19 && toMoveBoard
-            case ClickedKomaState.Gin => (absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9) && toMoveBoard
-            case ClickedKomaState.Kin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case ClickedKomaState.Ou => (absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10) && toMoveBoard
-            case ClickedKomaState.Kaku => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
-              && toMoveBoard)
-            case ClickedKomaState.Hisha => ((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex))
-              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex))
-              && toMoveBoard)
-            case ClickedKomaState.To => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case ClickedKomaState.NariKyo => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case ClickedKomaState.NariKei => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case ClickedKomaState.NariGin => (absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10) && toMoveBoard
-            case ClickedKomaState.Uma => ((absMoveDistance % 10 == 0 && board.leftUpJumpCheck(num, clickedIndex) && board.rightDownJumpCheck(num, clickedIndex))
-              || (absMoveDistance % 8 == 0 && board.rightUpJumpCheck(num, clickedIndex) && board.leftDownJumpCheck(num, clickedIndex))
-              || absMoveDistance == 1 || absMoveDistance == 9) && toMoveBoard
-            case ClickedKomaState.Ryu =>((absMoveDistance % 9 == 0 && board.upJumpCheck(num, clickedIndex) && board.downJumpCheck(num, clickedIndex)) //縦(上下)方向
-              || (existSelectedCellIndex / 9 == clickedIndex / 9 && board.rightJumpCheck(num, clickedIndex) && board.leftJumpCheck(num, clickedIndex)) //横方向
-              || absMoveDistance == 1 || absMoveDistance == 8 || absMoveDistance == 9 || absMoveDistance == 10) && toMoveBoard
-            case _ => false
-          }
-        }
-      }
-      canMove
-    }
 
     /** 手持ちの駒を盤面に打つ時に行う処理 */
     def useHandKomaFlow(num: Int) = {
@@ -687,7 +706,7 @@ object ShogiBoard extends JFXApp {
     val komaLabel = { //升ないの駒の置き場所を定義してる
     val label = new Label
       label.setText(koma.kind.name)
-      if (!koma.isSente) label.setRotate(180)
+      if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
       label.setFont(Font(30))
       label.setMaxSize(30, 30)
       label.setLayoutX(25)
