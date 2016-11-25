@@ -222,7 +222,7 @@ object ShogiBoard extends JFXApp {
         Koma(handOverlap(124), 130, true, displayKoma) :: Koma(handOverlap(125), 131, true, displayKoma) :: Koma(handOverlap(126), 132, true, displayKoma) ::
         lastKomas)
     }
-    val outputKomas = BlankKomas.filterNot( koma => koma.kind == ClickedKomaState.Blank)
+    val outputKomas = BlankKomas.filterNot(koma => koma.kind == ClickedKomaState.Blank)
 
     board = {
       val addHandNumberBoard: Board = Board(outputKomas)
@@ -687,6 +687,7 @@ object ShogiBoard extends JFXApp {
     val komaLabel = { //升ないの駒の置き場所を定義してる
     val label = new Label
       label.setText(koma.kind.name)
+      if (!koma.isSente) label.setRotate(180)
       label.setFont(Font(30))
       label.setMaxSize(30, 30)
       label.setLayoutX(25)
