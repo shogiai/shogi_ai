@@ -13,7 +13,7 @@ import scalafx.scene.{Group, Scene}
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   var initalChoiceKoma = true
 
   var board: Board = Board(
@@ -474,6 +474,7 @@ object ShogiBoard extends JFXApp {
           case Some(ClickedKomaState.Kaku) => 124
           case Some(ClickedKomaState.Hisha) => 125
           case Some(ClickedKomaState.Ou) => 126
+          case _ => 126
         }
         case false => tookKomaOpt match {
           case Some(ClickedKomaState.Fu) => 100
@@ -484,6 +485,7 @@ object ShogiBoard extends JFXApp {
           case Some(ClickedKomaState.Kaku) => 88
           case Some(ClickedKomaState.Hisha) => 89
           case Some(ClickedKomaState.Ou) => 90
+          case _ => 90
         }
       }
       movePlace
