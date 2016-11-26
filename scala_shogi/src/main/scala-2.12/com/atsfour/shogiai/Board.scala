@@ -15,6 +15,8 @@ case class Board(komas: List[Koma]) {
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
+  def MovePlace(place: Int):Boolean = true
+
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
@@ -97,8 +99,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      nowColumn >= column(koma.index) ||
-      toColumn <= column(koma.index) || !koma.onBoard)
+      (nowColumn >= column(koma.index) && row(koma.index) >= nowRow) || (toColumn <= column(koma.index) && row(koma.index) <= toRow) ||
+      !koma.onBoard)
   }
 
   /** 左下方向にどれだけ動けるか */
@@ -106,8 +108,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      toColumn >= column(koma.index) ||
-      nowColumn <= column(koma.index) || !koma.onBoard)
+      (toColumn >= column(koma.index) && row(koma.index) >= toRow) || (nowColumn <= column(koma.index) && row(koma.index) <= nowRow) ||
+      !koma.onBoard)
   }
 
   /** 左上方向にどれだけ動けるか */
@@ -115,8 +117,8 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      toColumn >= column(koma.index) ||
-      nowColumn <= column(koma.index) || !koma.onBoard)
+      (toColumn >= column(koma.index) && toRow >= row(koma.index)) || (nowColumn <= column(koma.index) && nowRow <= row(koma.index)) ||
+      !koma.onBoard)
   }
 
   /** 右下方向にどれだけ動けるか */
@@ -124,8 +126,26 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      nowColumn >= column(koma.index) ||
-      toColumn <= column(koma.index) || !koma.onBoard)
+      (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
+      !koma.onBoard)
+  }
+
+  /** 角の動きの定義 */
+  def rightUpLeftDownMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => toRow + toColumn == nowColumn + nowRow)
+  }
+
+  def leftUpRightDownMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => toRow - toColumn == nowRow - nowColumn)
+  }
+
+  /** 盤面内を動いているか */
+  def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
+    now <= 80 && toIndex <= 80
   }
 
 }
