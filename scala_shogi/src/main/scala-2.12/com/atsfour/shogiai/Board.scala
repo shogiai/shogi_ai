@@ -1,6 +1,6 @@
 package com.atsfour.shogiai
 
-import ShogiBoard.ClickedKomaState
+import com.atsfour.shogiai.ShogiBoard.ClickedKomaState
 
 case class Board(komas: List[Koma]) {
 
@@ -16,6 +16,12 @@ case class Board(komas: List[Koma]) {
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
   def MovePlace(place: Int):Boolean = true
+
+  //現在の王の位置を探索する
+  def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = komas.zipWithIndex.find(_._1.kind == komaKind) match {
+    case Some((Koma(kind, index, isSenteKoma, onBoard), komaKind)) => index
+    case None => -1
+  }
 
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
