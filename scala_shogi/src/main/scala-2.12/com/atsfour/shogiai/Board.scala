@@ -20,7 +20,7 @@ case class Board(komas: List[Koma]) {
   def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = {
     komas.filter(_.kind == komaKind).filter(_.isSente == isSenteKoma) match {
       case List(Koma(kind, index, isSente, onBoard)) => index
-      case Nil => -1
+      case _ => -1
     }
   }
 
