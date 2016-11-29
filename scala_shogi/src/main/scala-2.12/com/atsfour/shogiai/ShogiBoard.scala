@@ -12,14 +12,9 @@ import scalafx.scene.{Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
-  var toIndexStock: List[Int] = Nil
-  var ouTookKomaStock: List[Int] = Nil
-  var canNotTyuAi: List[Int] = Nil
-  var canTyuAi: Boolean = true
-  var notGetBackKoma: Boolean = true
 
   val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
-  var initalChoiceKoma = true
+  val initalChoiceKoma = true
 
   var board: Board = Board(
     Koma(ClickedKomaState.A, 81, true, initalChoiceKoma) :: Koma(ClickedKomaState.B, 87, true, initalChoiceKoma) ::
@@ -29,13 +24,15 @@ object ShogiBoard extends JFXApp {
 
   //todo Stateを減らしたい
   /** StateとFlagを定義 */
+  var isSenteTurnState: Boolean = true
   var selectedCellIndex: Option[Int] = None
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
-  var isSenteTurnState: Boolean = true
-  var stockNariIndex = -1
-
   var isCheckmate: Option[Boolean] = None
+
+  var stockNariIndex = -1
+  var (tyuAiFalseList: List[Int], toIndexStock: List[Int], ouTookKomaStock: List[Int], canNotTyuAi: List[Int]) = (List(), List(), List(), List())
+  var (canTyuAi: Boolean, notGetBackKoma: Boolean, notGetBackTyuaiKoma: Boolean) = (true, true, true)
 
   var clickedKomaKind: ClickedKomaState = ClickedKomaState.None
   sealed abstract class ClickedKomaState(val name: String)
@@ -121,6 +118,9 @@ object ShogiBoard extends JFXApp {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(40) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(40) }
 
+    /** todo boardを出すタイミングと実際に判定できるタイミングを合わせる
+      * 待ったとの兼ね合い, 出るタイミングと初期化を工夫する必要
+      */
     board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったを出していいとき
       val addBoard: Board = Board(
         Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
@@ -417,11 +417,13 @@ object ShogiBoard extends JFXApp {
 
     def initializeTumiState = {
       isCheckmate = None
+      tyuAiFalseList = Nil
       toIndexStock = Nil
       ouTookKomaStock = Nil
-      notGetBackKoma = true
       canNotTyuAi = Nil
       canTyuAi = true
+      notGetBackKoma = true
+      notGetBackTyuaiKoma = true
     }
 
     def isThereKomaKind(index: Int) = board.findKoma(index) match {
@@ -453,6 +455,7 @@ object ShogiBoard extends JFXApp {
         val absPlaceMoveDistance = Math.abs(fromIndex - toIndex) //駒の移動距離の絶対値を定義
         val placeMoveDistance = fromIndex - toIndex //駒の移動距離を定義
 
+        //todo 王の効きは貫通してOK
         def goteKomaMove = koma match {
             case ClickedKomaState.Fu => placeMoveDistance == -9 && board.fromToMoveBoard(fromIndex, toIndex) && notCrossOnBoard(fromIndex)
             case ClickedKomaState.Kyo => (placeMoveDistance % 9 == 0 && placeMoveDistance < 0 && board.downJumpCheck(fromIndex, toIndex)) && board.fromToMoveBoard(fromIndex, toIndex) && notCrossOnBoard(fromIndex)
@@ -533,6 +536,52 @@ object ShogiBoard extends JFXApp {
           }
       }
 
+      //持ち駒に何があるかをカウントする関数
+      def canMoveWithoutOu(toIndex: Int): Boolean = {
+        for (fromIndex <- 0 to 80) {
+          if (canTakePlace(fromIndex, toIndex, false, board) && //詰まさ無い側の駒で、相手の王を取ろうとしている駒を取れるか
+            !isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) { //王以外
+            notGetBackKoma = false
+          }
+        }
+        notGetBackKoma
+      }
+      def canMoveWithoutOuTyuAi(toIndex: Int): List[Int] = {
+        for (fromIndex <- 0 to 80) {
+          if (canTakePlace(fromIndex, toIndex, false, board) && //詰まさ無い側の駒で、相手の王を取ろうとしている駒を取れるか
+            !isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) { //王以外
+            tyuAiFalseList = fromIndex :: tyuAiFalseList
+          }
+        }
+        tyuAiFalseList
+      }
+
+      val senteHandKomaSet: List[Int] = List(112,113,114,115,116,124,125).filter(index => isThereKomaKind(index).isDefined)
+      val goteHandKomaSet: List[Int] = List(100,101,102,103,104,88,89).filter(index => isThereKomaKind(index).isDefined)
+
+      def canTyuai(index:Int): Boolean = {
+        isSenteTurnState match {
+          case true => {
+            if (senteHandKomaSet.contains(115) || senteHandKomaSet.contains(116) || senteHandKomaSet.contains(124) || senteHandKomaSet.contains(125)) true
+            else if ((senteHandKomaSet.contains(113) || (index / 9 + 1) != 1) || //香車を持っていて1段目ではない
+              (senteHandKomaSet.contains(114) || ((index / 9 + 1) != 1 && (index / 9 + 1) != 2)) || //桂馬を持っていて1段目,または2段目ではない
+              (senteHandKomaSet.contains(112) || (index / 9 + 1) != 1 && board.nifuCheck(index, isSenteTurnState)) //歩を持っていて、二歩で無いかつ1段目でない
+            ) true
+            else if (canMoveWithoutOuTyuAi(index).nonEmpty) true //その場所への駒が置けなくなるというデメリットがあるので、最終手段
+            else false
+          }
+          case false => {
+            if (senteHandKomaSet.contains(103) || senteHandKomaSet.contains(104) || senteHandKomaSet.contains(88) || senteHandKomaSet.contains(89)) true
+            else if ((senteHandKomaSet.contains(101) && (index / 9 + 1) != 9) || //香車を持っていて9段目ではない
+              (senteHandKomaSet.contains(102) && ((index / 9 + 1) != 8 && (index / 9 + 1) != 9)) || //桂馬を持っていて8段目,または9段目ではない
+              (senteHandKomaSet.contains(100) && (index / 9 + 1) != 9 && board.nifuCheck(index, isSenteTurnState)) //歩を持っていて、二歩で無いかつ9段目でない
+            ) true
+            else if (canMoveWithoutOuTyuAi(index).nonEmpty) true
+            else false
+          }
+        }
+      }
+
       val enemyOuIndex: Int = board.findKomaKind(ClickedKomaState.Ou, !isSenteTurnState) //相手の王の位置
       val nineColumnOuMove: List[Int] = List(enemyOuIndex - 9, enemyOuIndex - 8, enemyOuIndex, enemyOuIndex + 1, enemyOuIndex + 9, enemyOuIndex + 10)
       val oneColumnOuMove: List[Int] = List(enemyOuIndex - 10, enemyOuIndex - 9, enemyOuIndex - 1, enemyOuIndex, enemyOuIndex + 8, enemyOuIndex + 9)
@@ -546,10 +595,10 @@ object ShogiBoard extends JFXApp {
       val OucanMove: List[Int] = ouMove.filter(index => index >= 0 && index <= 80)
 
       for (fromIndex <- 0 to 80) {
-        //王の場所にtoIndexができる駒を調べる => 王を狙う駒を取り返すパターン
         if (canTakePlace(fromIndex, enemyOuIndex, true, board)) {
           ouTookKomaStock = fromIndex :: ouTookKomaStock
         }
+
         //すべての駒が効きのある場所 => 逃げるパターン
         for (toIndex <- 0 to 80) {
           if (!toIndexStock.contains(toIndex)) {
@@ -560,38 +609,42 @@ object ShogiBoard extends JFXApp {
         }
       }
 
-      //王を狙う駒を取り返すパターン
-      if (ouTookKomaStock.length == 0) notGetBackKoma = false //王に対する駒の効きが無いなら詰みではない
-      else if (ouTookKomaStock.length == 1) { //一つなら、王以外でその駒を取り返せるか、中合いが効くか調べる
+      //王を取れる駒に対する3パターンの対応が可能かどうか
+      if (ouTookKomaStock.isEmpty) notGetBackKoma = false //王に対する駒の効きが無いなら詰みではない
+      else if (ouTookKomaStock.length == 1) { //王を取る駒が一つの場合、王以外でその駒を取り返す、及び、中合いでの対応が可能
 
-        //取り返せる場合
-        for (fromIndex <- 0 to 80) {
-          if (canTakePlace(fromIndex, ouTookKomaStock(0), false, board) && //詰まさ無い側の駒で、相手の王を取ろうとしている駒を取れるか
-            !isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) { //王以外
-              notGetBackKoma = false
-          }
-        }
+        //取り返せるパターン
+        canMoveWithoutOu(ouTookKomaStock.head)
 
-        /** todo
-          * 1. "canTyuai(index)"関数を定義(そこに自分の駒を置けるか、という関数)
-          * 2. その関数がtrueになる場所だけを中合いしたい
-          * BlankKomasと同様の追加方法ができないか？
-          */
         //中合いが効くパターン
         val tyuAiKoma = true
         val tumiCheckKomas: List[Koma] = board match { case Board(komas) => komas }
-        val tyuAiBorad = Board(
-          Koma(ClickedKomaState.Fu, enemyOuIndex - 10, isSenteTurnState, tyuAiKoma) :: Koma(ClickedKomaState.Fu, enemyOuIndex - 9, isSenteTurnState, tyuAiKoma) ::
-            Koma(ClickedKomaState.Fu, enemyOuIndex - 8, isSenteTurnState, tyuAiKoma) :: Koma(ClickedKomaState.Fu, enemyOuIndex - 1, isSenteTurnState, tyuAiKoma) ::
-            Koma(ClickedKomaState.Fu, enemyOuIndex + 1, isSenteTurnState, tyuAiKoma) :: Koma(ClickedKomaState.Fu, enemyOuIndex + 8, isSenteTurnState, tyuAiKoma) ::
-            Koma(ClickedKomaState.Fu, enemyOuIndex + 9, isSenteTurnState, tyuAiKoma) :: Koma(ClickedKomaState.Fu, enemyOuIndex + 10, isSenteTurnState, tyuAiKoma) ::
-            tumiCheckKomas)
-        for (fromIndex <- 0 to 80) {
-          if (canTakePlace(fromIndex, enemyOuIndex, true, tyuAiBorad)) { //入らなければOK
+
+        def tyuAiAdd(index: Int): ClickedKomaState = {
+          canTyuai(index) match {
+            case true => { //indexが、tyuAiFalseList(駒が移動して受ける前)の中に含まれていない場合にFuを置く
+              if (tyuAiFalseList.contains(index)) ClickedKomaState.Blank
+              else ClickedKomaState.Blank
+            }
+            case false => ClickedKomaState.Blank
+          }
+        }
+
+        //true => Fu,False => Blankの駒をつけて、Blankの駒をはがしてから処理する
+        val tyuAiKomas =
+          Koma(tyuAiAdd(enemyOuIndex - 10), enemyOuIndex - 10, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(enemyOuIndex - 9), enemyOuIndex - 9, isSenteTurnState, tyuAiKoma) ::
+            Koma(tyuAiAdd(enemyOuIndex - 8), enemyOuIndex - 8, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(enemyOuIndex - 1), enemyOuIndex - 1, isSenteTurnState, tyuAiKoma) ::
+            Koma(tyuAiAdd(enemyOuIndex + 1), enemyOuIndex + 1, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(enemyOuIndex + 8), enemyOuIndex + 8, isSenteTurnState, tyuAiKoma) ::
+            Koma(tyuAiAdd(enemyOuIndex + 9), enemyOuIndex + 9, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(enemyOuIndex + 10), enemyOuIndex + 10, isSenteTurnState, tyuAiKoma) ::
+            tumiCheckKomas
+        val tyuAiBoard: Board = Board(tyuAiKomas.filterNot(koma => koma.kind == ClickedKomaState.Blank))
+
+          for (fromIndex <- 0 to 80) {
+          if (canTakePlace(fromIndex, enemyOuIndex, true, tyuAiBoard)) { //入らなければOK
             canNotTyuAi = fromIndex :: canNotTyuAi
           }
         }
-        if (canNotTyuAi.isEmpty) canTyuAi = false //長さが1から、中合いすると0になる場合は、詰みでは無い
+        if (canNotTyuAi.isEmpty) canTyuAi = false //王を狙う駒が一つで、中合いすると0になる場合は、詰みでは無い
       }
 
       //逃げるパターン
@@ -601,8 +654,9 @@ object ShogiBoard extends JFXApp {
         case Nil => true
         case _ => false
       }
+      println(OucanLive)
 
-      //(王を狙う駒を取り返す || 逃げるパターン) <= 両方ができない(両方ともtrueの)場合は、詰みになる
+      //3パターンのいずれの対応もできない場合、詰みになる
       println(isCheckmateFlag, notGetBackKoma, canTyuAi)
       isCheckmateFlag && notGetBackKoma && canTyuAi
     }
@@ -830,7 +884,6 @@ object ShogiBoard extends JFXApp {
         (clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))
       }
     }
-
 
     /** 手持ちの駒を盤面に打つ時に行う処理 */
     def useHandKomaFlow(num: Int) = {

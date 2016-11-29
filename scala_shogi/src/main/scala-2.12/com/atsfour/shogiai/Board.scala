@@ -1,6 +1,6 @@
 package com.atsfour.shogiai
 
-import com.atsfour.shogiai.ShogiBoard.ClickedKomaState
+import ShogiBoard.ClickedKomaState
 
 case class Board(komas: List[Koma]) {
 
@@ -17,22 +17,7 @@ case class Board(komas: List[Koma]) {
 
   def MovePlace(place: Int):Boolean = true
 
-  /** todo 駒が移動するか、駒を打つかで、indexに駒を置くことができるかを判定する関数 */
-  def canTyuai(index:Int): Boolean = {
-    /**
-    1.持ち駒のうちのいずれかを打つことができる
-    - 歩,香車,桂馬以外の持ち駒がある => 必ずtrue
-    - 歩、桂馬、香車しかない => 1段(9段)以外はtrue(香車を使う)
-    - 桂馬しかない => 1,2段(8,9段)以外はtrue
-    - 歩しかない => 1段(9段)以外で、2歩で無いならばtrue
-    2. canMovePlaceできる
-
-    => いずれかがtrueであれば、そこは合い駒が可能である
-    */
-    true
-  }
-
-  //現在の王の位置を探索する
+  //駒の位置を探索する
   def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = komas.zipWithIndex.find(_._1.kind == komaKind) match {
     case Some((Koma(kind, index, isSenteKoma, onBoard), komaKind)) => index
     case None => -1
@@ -82,7 +67,6 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 歩を打つときの二歩チェック */
-  case class NifuCheck(kind: String, isSente: Boolean, onBoard: Boolean)
   def nifuCheck(now: Int, isSenteInput: Boolean): Boolean = {
     komas.forall(koma => column(koma.index) != column(now) || koma.kind != ClickedKomaState.Fu || !koma.onBoard || (koma.isSente != isSenteInput))
   }
