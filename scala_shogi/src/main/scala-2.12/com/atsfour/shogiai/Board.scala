@@ -17,10 +17,11 @@ case class Board(komas: List[Koma]) {
 
   def MovePlace(place: Int):Boolean = true
 
-  //駒の位置を探索する
-  def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = komas.zipWithIndex.find(_._1.kind == komaKind) match {
-    case Some((Koma(kind, index, isSenteKoma, onBoard), komaKind)) => index
-    case None => -1
+  def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = {
+    komas.filter(_.kind == komaKind).filter(_.isSente == isSenteKoma) match {
+      case List(Koma(kind, index, isSente, onBoard)) => index
+      case Nil => -1
+    }
   }
 
   //駒が取られた時の所有権の変更
@@ -151,6 +152,71 @@ case class Board(komas: List[Koma]) {
   /** 盤面内を動いているか */
   def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
     now <= 80 && toIndex <= 80
+  }
+
+  /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いた */
+  //上にどれだけ動けるか
+  def checkMateUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //下にどれだけ動けるか
+  def checkMateDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左にどれだけ動けるか
+  def checkMateLeftJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) <= toColumn || column(koma.index) >= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右にどれだけ動けるか, 位置を判定
+  def checkMateRightJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右上方向にどれだけ動けるか
+  def checkMateRightUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
+      (nowColumn >= column(koma.index) && row(koma.index) >= nowRow) || (toColumn <= column(koma.index) && row(koma.index) <= toRow) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左下方向にどれだけ動けるか
+  def checkMateLeftDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
+      (toColumn >= column(koma.index) && row(koma.index) >= toRow) || (nowColumn <= column(koma.index) && row(koma.index) <= nowRow) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左上方向にどれだけ動けるか
+  def checkMateLeftUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
+      (toColumn >= column(koma.index) && toRow >= row(koma.index)) || (nowColumn <= column(koma.index) && nowRow <= row(koma.index)) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右下方向にどれだけ動けるか
+  def checkMateRightDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
+      (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
   }
 
 }
