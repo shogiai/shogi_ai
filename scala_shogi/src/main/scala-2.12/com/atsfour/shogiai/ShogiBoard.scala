@@ -734,7 +734,7 @@ object ShogiBoard extends JFXApp {
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
       optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D)
     def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma) || optClickedKomaKind.contains(ClickedKomaState.Ltu) || optClickedKomaKind.contains(ClickedKomaState.TaHira)
-    def tumiBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.Tumi)
+    def tumiBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.Tumi) && !isCanNari && !isWin
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
@@ -911,20 +911,14 @@ object ShogiBoard extends JFXApp {
       fromHandToBoradAddState
       if (toMoveBoard && optIsSenteKoma.isEmpty &&
         !(clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))) isNifu = true
-      if (canSetFromHand) {
-        playAndInitialize(num)
-        tumiCheckFlow
-      }
+      if (canSetFromHand) playAndInitialize(num)
       else clickCancel
     }
 
     /** 盤上から盤上へ移動する駒が行う処理 */
     def inBordKomaMoveFlow(koma: ClickedKomaState, num: Int) = {
       fromToBoradAddState(koma)
-      if (canMove(koma, num)) {
-        takeKomaAndplayAndInitialize(num)
-        tumiCheckFlow
-      }
+      if (canMove(koma, num)) takeKomaAndplayAndInitialize(num)
       else clickCancel
     }
 
