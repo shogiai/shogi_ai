@@ -25,12 +25,14 @@ object ShogiBoard extends JFXApp {
   //todo Stateを減らしたい
   /** StateとFlagを定義 */
   var isSenteTurnState: Boolean = true
-  var selectedCellIndex: Option[Int] = None
+  var firstClickFlag = false
+  var selectedCellIndex: Int = -100
+  var stockNariIndex = -1
+
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
   var isCheckmate: Option[Boolean] = None
 
-  var stockNariIndex = -1
   var tyuAiFalseList: List[Int] = Nil
   var toIndexStock: List[Int] = Nil
   var ouTookKomaStock: List[Int] = Nil
@@ -350,7 +352,7 @@ object ShogiBoard extends JFXApp {
     val optIsSenteKoma: Option[Boolean] = komaOpt.map(koma => koma.isSente)
     val optOnBoard: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
 
-    val existSelectedCellIndex = selectedCellIndex.getOrElse(-1)
+    val existSelectedCellIndex = selectedCellIndex
     val absMoveDistance = Math.abs(existSelectedCellIndex - clickedIndex) //駒の移動距離の絶対値を定義
     val moveDistance = existSelectedCellIndex - clickedIndex //駒の移動距離を定義
 
@@ -687,10 +689,10 @@ object ShogiBoard extends JFXApp {
 
 
     /** Cellの描画を定義 */
-    val isFillLightBulue: Boolean = selectedCellIndex.contains(clickedIndex) && clickedKomaKind != ClickedKomaState.None
+    val isFillLightBulue: Boolean = selectedCellIndex == clickedIndex && clickedKomaKind != ClickedKomaState.None
 
     val fillColor = if (isFillLightBulue) LightBlue
-    else if (canMove(clickedKomaKind, selectedCellIndex.getOrElse(200)) && isNotFriendKoma(clickedIndex)
+    else if (canMove(clickedKomaKind, selectedCellIndex) && isNotFriendKoma(clickedIndex)
       && optOnBoardKomaState.contains(true)
     ) AliceBlue
     else if (toMoveBoard || handPlace) Burlywood
@@ -725,10 +727,10 @@ object ShogiBoard extends JFXApp {
     }
 
     def nariChoiceBranch: Boolean = {
-      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex.contains(106)) || optClickedKomaKind.contains(ClickedKomaState.Ri)
+      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 106) || optClickedKomaKind.contains(ClickedKomaState.Ri)
     }
     def funariChoiceBranch: Boolean = {
-      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex.contains(110)) || optClickedKomaKind.contains(ClickedKomaState.Not)
+      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || optClickedKomaKind.contains(ClickedKomaState.Not)
     }
 
     /** 初期化, 待った */
@@ -750,12 +752,13 @@ object ShogiBoard extends JFXApp {
       if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
     }
 
+    //todo 最初クリックした時が該当する状態、うまく外したい => flag
     def clickCancel = {
-      if (moveDistance != 0) {
+      if (moveDistance != 0 && !firstClickFlag) {
+        print("されてる")
         clickedKomaKind = ClickedKomaState.None
         optIsSenteKomaState = None
         optOnBoardKomaState = None
-        selectedCellIndex = None
       }
     }
 
@@ -846,6 +849,7 @@ object ShogiBoard extends JFXApp {
       isCanNari = false
       isSenteTurnState = switchTurn(isSenteTurnState)
       stockNariIndex = -1
+      selectedCellIndex = -100 //todo 追加した
     }
 
     /** 実際に手を指し、今までの条件を初期化する */
@@ -871,7 +875,7 @@ object ShogiBoard extends JFXApp {
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
       }
 
-      selectedCellIndex = None
+      selectedCellIndex = -100
       optIsSenteKomaState = None
       clickedKomaKind = ClickedKomaState.None
       optOnBoardKomaState = None
@@ -946,6 +950,7 @@ object ShogiBoard extends JFXApp {
         board = pastBoard
         isSenteTurnState = !isSenteTurnState
       }
+      firstClickFlag = false
       clickCancel
       isCanNari = false
       isWin = false
@@ -957,7 +962,15 @@ object ShogiBoard extends JFXApp {
 
     group.setOnMouseClicked(e => {
       selectedCellIndex match {
-        case Some(num) => {
+
+        case num => {
+
+          /** 初期化されている場合は、クリックされている座標を代入する */
+          firstClickFlag = false
+          if (selectedCellIndex == -100) {
+            selectedCellIndex = clickedIndex
+            firstClickFlag = true
+          }
 
           /** 初期化、待ったをクリックした場合の処理 */
           if (initializationBranch) initializationOrWaitFlow
@@ -1001,7 +1014,9 @@ object ShogiBoard extends JFXApp {
           /** 龍の場合 */
           else if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu, num)
 
-          /* デバッグ用
+          else clickCancel
+
+          //デバッグ用
           println("existSelectedCellIndex:" + existSelectedCellIndex, "selectedCellIndex:" + selectedCellIndex, "stockNariIndex:" + stockNariIndex)
           println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
           println("optIsSenteKoma:" + optIsSenteKoma, "optIsSenteKomaState:" + optIsSenteKomaState)
@@ -1009,10 +1024,8 @@ object ShogiBoard extends JFXApp {
           println("isSenteTurnState:" + isSenteTurnState)
           println("num:" + num,"clickedIndex:"+clickedIndex,"selectedCellIndex:"+selectedCellIndex)
           println("")
-          */
         }
 
-        case None => selectedCellIndex = Some(clickedIndex)
       }
       boardSwitch
       isNifu = false
