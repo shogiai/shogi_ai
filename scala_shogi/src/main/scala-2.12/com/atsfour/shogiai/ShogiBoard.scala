@@ -222,17 +222,17 @@ object ShogiBoard extends JFXApp {
         }
       }
       case (Some(true), false) => isSenteTurnState match {
-        case true => { //先手の手番 => 詰みあり(先手)
+        case true => { //先手の手番 => 先手詰み(先手)
           val senteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Tumi, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 128, isSenteTurnState, displayKoma) ::
-            Koma(ClickedKomaState.Ahira, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 134, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Sen, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 128, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Tumi, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 134, isSenteTurnState, displayKoma) ::
               secondKomas)
           senteTumiBoard
         }
-        case false => { //後手の手番 => 詰みあり(後手)
+        case false => { //後手の手番 => 後手詰み(後手)
           val goteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Tumi, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 86, isSenteTurnState, displayKoma) ::
-            Koma(ClickedKomaState.Ahira, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 92, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Go, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 86, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Tumi, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 92, isSenteTurnState, displayKoma) ::
               secondKomas)
           goteTumiBoard
         }
@@ -704,6 +704,7 @@ object ShogiBoard extends JFXApp {
 
     val group =  new Group { children = List(Some(grid), komaOpt.map(komaObjGroup)).flatten }
 
+    //todo branchへの分岐方法は適切か?ワンクリックで選択可能な方法は無いか?
     /** クリック時にどの判定を行うべきか分岐 */
     def useHandKomaBranch: Boolean = {
       isSenteTurnState match {
