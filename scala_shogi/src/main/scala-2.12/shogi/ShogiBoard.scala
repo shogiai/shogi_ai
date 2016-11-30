@@ -124,7 +124,7 @@ object ShogiBoard extends JFXApp {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(40) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(40) }
 
-    board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったを出していいとき
+    board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったまで出していいとき
       val addBoard: Board = Board(
         Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
           Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
@@ -132,11 +132,19 @@ object ShogiBoard extends JFXApp {
           Koma(ClickedKomaState.Ma, 117, true, transitionKoma) :: Koma(ClickedKomaState.Ltu, 123, true, transitionKoma) :: Koma(ClickedKomaState.TaHira, 129, true, transitionKoma) :: //待った
           onBoardKomas)
       addBoard
-    } else {
-      val addInitializeBoard: Board = Board(
+    }
+    else if (!isCanNari) { //詰み判定まで出していいとき
+    val addBoard: Board = Board(
         Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
           Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
           Koma(ClickedKomaState.Tumi, 105, isSenteTurnState, transitionKoma) :: //詰み判定
+          onBoardKomas)
+      addBoard
+    }
+    else { //初期化しか出してはいけないとき
+      val addInitializeBoard: Board = Board(
+        Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
+          Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
           onBoardKomas)
       addInitializeBoard
     }
