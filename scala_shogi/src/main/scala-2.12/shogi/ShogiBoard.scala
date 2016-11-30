@@ -22,24 +22,9 @@ object ShogiBoard extends JFXApp {
       initalKomas)
   var pastBoard: Board = board
 
-  //todo Stateを減らしたい
+  /** 将棋盤のテンプレートの切り替え */
+
   /** StateとFlagを定義 */
-  var isSenteTurnState: Boolean = true
-  var firstClickFlag: Boolean = false
-  var selectedCellIndex: Int = -100
-  var stockNariIndex: Int = -1
-
-  var optIsSenteKomaState: Option[Boolean] = None
-  var optOnBoardKomaState: Option[Boolean] = None
-  var isCheckmate: Option[Boolean] = None
-
-  var tyuAiFalseList: List[Int] = Nil
-  var toIndexStock: List[Int] = Nil
-  var ouTookKomaStock: List[Int] = Nil
-  var enemyOuTakeKomaStock: List[Int] = Nil
-  var canNotTyuAi: List[Int] = Nil
-  var (canTyuAi: Boolean, notGetBackKoma: Boolean, notGetBackTyuaiKoma: Boolean) = (true, true, true)
-
   var clickedKomaKind: ClickedKomaState = ClickedKomaState.None
   sealed abstract class ClickedKomaState(val name: String)
   object ClickedKomaState {
@@ -114,9 +99,10 @@ object ShogiBoard extends JFXApp {
     lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu, Sen, Go, Te, No, Ka, Chi, Not, Na, Ri)
   }
 
-  /** 将棋盤のテンプレートの切り替え */
+  var isSenteTurnState: Boolean = true
   var (isWin, isCanNari, isNifu) = (false, false, false)
-  var (isSenteHandOver,isGoteHandOver) = (false, false)
+  var isCheckmate: Option[Boolean] = None
+  var enemyOuTakeKomaStock: List[Int] = Nil
 
   def boardSwitch :Board = {
     /** 初期化と待ったのボタン更新 */
@@ -352,6 +338,13 @@ object ShogiBoard extends JFXApp {
   }
 
   /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
+
+  /** cellObjGroup内で使われるStateを定義 */
+  var selectedCellIndex: Int = -100
+  var stockNariIndex: Int = -1
+  var optIsSenteKomaState: Option[Boolean] = None
+  var optOnBoardKomaState: Option[Boolean] = None
+
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
     /** 以下、駒をクリックした時に使う関数のまとまり */
@@ -441,18 +434,6 @@ object ShogiBoard extends JFXApp {
       canMove
     }
 
-    def initializeTumiState = {
-      isCheckmate = None
-      tyuAiFalseList = Nil
-      toIndexStock = Nil
-      ouTookKomaStock = Nil
-      enemyOuTakeKomaStock = Nil
-      canNotTyuAi = Nil
-      canTyuAi = true
-      notGetBackKoma = true
-      notGetBackTyuaiKoma = true
-    }
-
     def isThereKomaKind(index: Int) = board.findKoma(index) match {
       case Some((Koma(kind, index, isSente, onBoard), i)) => Some(kind)
       case None => None
@@ -473,6 +454,13 @@ object ShogiBoard extends JFXApp {
         case false => !isThereSenteKoma(index).contains(false)
       }
     }
+
+    /** 王が詰んでいるかチェックするためのState */
+    var tyuAiFalseList: List[Int] = Nil
+    var toIndexStock: List[Int] = Nil
+    var ouTookKomaStock: List[Int] = Nil
+    var canNotTyuAi: List[Int] = Nil
+    var (canTyuAi: Boolean, notGetBackKoma: Boolean, notGetBackTyuaiKoma: Boolean) = (true, true, true)
 
     /** 以下、王が詰んでいるかのチェック関数 */
     def isCheckmateCheck: Boolean = {
@@ -692,6 +680,18 @@ object ShogiBoard extends JFXApp {
       //println(isCheckmateFlag, notGetBackKoma, canTyuAi, enemyOuTakeKomaStock.isEmpty, enemyOuTakeKomaStock.nonEmpty)
       isCheckmateFlag && notGetBackKoma && canTyuAi && enemyOuTakeKomaStock.isEmpty
     }
+
+    def initializeTumiState = {
+      isCheckmate = None
+      tyuAiFalseList = Nil
+      toIndexStock = Nil
+      ouTookKomaStock = Nil
+      enemyOuTakeKomaStock = Nil
+      canNotTyuAi = Nil
+      canTyuAi = true
+      notGetBackKoma = true
+      notGetBackTyuaiKoma = true
+    }
     /** ここまで、王が詰んでいるかチェックする関数 */
 
 
@@ -758,6 +758,7 @@ object ShogiBoard extends JFXApp {
       if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
     }
 
+    var firstClickFlag: Boolean = false
     def clickCancel = {
       if (moveDistance != 0 && !firstClickFlag) {
         clickedKomaKind = ClickedKomaState.None
@@ -947,8 +948,6 @@ object ShogiBoard extends JFXApp {
           case Some(ClickedKomaState.D) => board = allRandomBoard
           case _ =>
         }
-        isSenteHandOver = false //初期化した場合の超過フラグは削除
-        isGoteHandOver = false //初期化した場合の超過フラグは削除
         pastBoard = board //待ったはなし
         isSenteTurnState = true
       }
