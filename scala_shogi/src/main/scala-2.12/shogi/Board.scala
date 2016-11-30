@@ -1,4 +1,4 @@
-package com.atsfour.shogiai
+package shogi
 
 import ShogiBoard.ClickedKomaState
 

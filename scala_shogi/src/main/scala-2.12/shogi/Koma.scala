@@ -1,6 +1,6 @@
-package com.atsfour.shogiai
+package shogi
 
-import ShogiBoard.ClickedKomaState
+import shogi.ShogiBoard.ClickedKomaState
 
 case class Koma(kind: ClickedKomaState, index: Int, isSente: Boolean, onBoard: Boolean) {
   val xPos = index % 9
