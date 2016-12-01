@@ -964,9 +964,9 @@ object ShogiBoard extends JFXApp {
       selectedCellIndex = -100
       stockNariIndex = -1
     }
-
     /** ここまで駒をクリックした時に使われる関数群 */
 
+    /** 実際に駒がクリックがされた場合の処理 */
     group.setOnMouseClicked(e => {
 
       /** 初期化されている場合は、クリックされている座標を代入する */
@@ -1050,11 +1050,14 @@ object ShogiBoard extends JFXApp {
       poly
     }
 
-    val komaLabel = { //升ないの駒の置き場所を定義してる
+    val komaLabel = { //升内の駒の置き場所を定義してる
     val label = new Label
       label.setText(koma.kind.name)
       if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
-      label.setFont(Font(30))
+      if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
+        || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
+        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) label.setFont(Font(25))
+      else label.setFont(Font(30))
       label.setMaxSize(30, 30)
       label.setLayoutX(25)
       label.setLayoutY(25)
