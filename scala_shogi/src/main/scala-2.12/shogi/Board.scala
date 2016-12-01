@@ -24,6 +24,13 @@ case class Board(komas: List[Koma]) {
     }
   }
 
+  def findPlaceKomaKind(place: Int): ClickedKomaState = {
+    komas.filter(_.index == place) match {
+      case List(Koma(kind, index, isSente, onBoard)) => kind
+      case _ => ClickedKomaState.Blank //起こりえない
+    }
+  }
+
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
@@ -154,6 +161,7 @@ case class Board(komas: List[Koma]) {
     now <= 80 && toIndex <= 80
   }
 
+  //todo 条件から抜く
   /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いた */
   //上にどれだけ動けるか
   def checkMateUpJumpCheck(now: Int, toIndex: Int): Boolean = {

@@ -1,5 +1,7 @@
 package shogi
 
+import java.io._
+import scala.collection.immutable.::
 import scala.util.Random
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
@@ -12,6 +14,41 @@ import scalafx.scene.{Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
+
+  var kifu: List[String] = List("まで","手で","勝ち")
+  val LOG_FILE_PATH = "kifu.txt" //ログ出力先
+  def logOutPut {
+    val tesu = ((kifu.length + 1)/3 - 1).toString
+    val winPlayer = (kifu.length + 1) % 2 match {
+        case 1 => "先手"
+        case 0 => "後手"
+        case _ => "??"
+    }
+
+    var outPutKifu: List[String] = kifu.takeRight(3)
+    outPutKifu = outPutKifu match {
+      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
+      case  _ => List("")
+    }
+
+    kifu = kifu.dropRight(3)
+    while(kifu.length >= 3) {
+      val itteList = kifu.take(3)
+      val itte: String = itteList match {
+        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
+        case _ => ""
+      }
+
+      outPutKifu = itte :: outPutKifu
+      kifu = kifu.drop(3)
+    }
+
+    val in = new File(LOG_FILE_PATH)
+    val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
+    outPutKifu.foreach(itte => out.print(itte+" "))
+    out.println("")
+    out.close
+  }
 
   val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   val initalChoiceKoma = true
@@ -340,6 +377,7 @@ object ShogiBoard extends JFXApp {
   /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
 
   /** cellObjGroup内で使われるStateを定義 */
+  //todo 変数をOption型にする
   var selectedCellIndex: Int = -100
   var stockNariIndex: Int = -1
   var optIsSenteKomaState: Option[Boolean] = None
@@ -814,7 +852,9 @@ object ShogiBoard extends JFXApp {
 
     def takeOuCheck(clickedIndex: Int) = {
       optClickedKomaKind.getOrElse(ClickedKomaState.None) match {
-        case ClickedKomaState.Ou => isWin = true
+        case ClickedKomaState.Ou =>  {
+          isWin = true
+        }
         case _ =>
       }
     }
@@ -877,6 +917,20 @@ object ShogiBoard extends JFXApp {
       else isSenteTurnState = switchTurn(isSenteTurnState) //成れない場合は相手の手番へ
 
       board = board.moveKoma(selectedCellIndex, clickedIndex)
+
+      val place = clickedIndex
+      val movedKoma = {
+        //mustNariの場合はここで棋譜に追加、canNariの場合はボタンを選択した時に追加する方式に
+        if (mustNari) board.findPlaceKomaKind(clickedIndex).name + "成り"
+        else if (canSetFromHand) board.findPlaceKomaKind(clickedIndex).name + "打"
+        else board.findPlaceKomaKind(clickedIndex).name
+      }
+      val tate = (clickedIndex / 9 + 1).toString
+      val yoko = (9 - (clickedIndex % 9)).toString
+
+      kifu = yoko :: tate :: movedKoma :: kifu
+      if (isWin) logOutPut //棋譜の出力
+
       if (optOnBoardKomaState.contains(false)){
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
       }
@@ -949,10 +1003,12 @@ object ShogiBoard extends JFXApp {
           case _ =>
         }
         pastBoard = board //待ったはなし
+        kifu = List("まで","手で","勝ち")
         isSenteTurnState = true
       }
       else if (waitBranch) {
         board = pastBoard
+        kifu.drop(3) //待ったをした場合を取り除く
         isSenteTurnState = !isSenteTurnState
       }
 
@@ -963,6 +1019,23 @@ object ShogiBoard extends JFXApp {
       isNifu = false
       selectedCellIndex = -100
       stockNariIndex = -1
+    }
+
+    def nariChoiceFlow = {
+      board = board.nariKoma(stockNariIndex)
+      kifu = kifu match { //kifuListの3番目に不成を追加
+        case a :: b :: c :: past => a :: b :: c+"成り" :: past
+        case _ => List("")
+      }
+      initializeNariGomaState //状態を元に戻す
+    }
+
+    def fuNariChoiceFlow = {
+      kifu = kifu match { //kifuListの3番目に不成を追加
+        case a :: b :: c :: past => a :: b :: c+"不成" :: past
+        case _ => List("")
+      }
+      initializeNariGomaState //状態を元に戻す
     }
     /** ここまで駒をクリックした時に使われる関数群 */
 
@@ -982,10 +1055,8 @@ object ShogiBoard extends JFXApp {
       else if (tumiBranch) tumiCheckFlow
 
       /** 駒が成るかどうかの判定をクリックした場合の処理 */
-      else if (nariChoiceBranch) {
-        board = board.nariKoma(stockNariIndex)
-        initializeNariGomaState //状態を元に戻す
-      } else if (funariChoiceBranch) initializeNariGomaState
+      else if (nariChoiceBranch) nariChoiceFlow
+      else if (funariChoiceBranch) fuNariChoiceFlow
 
       /** 持ち駒をクリックして盤面に打つ場合の処理 */
       else if (useHandKomaBranch) useHandKomaFlow
