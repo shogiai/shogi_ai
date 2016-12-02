@@ -178,9 +178,7 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-
     val secondKomas: List[Koma] = board match { case Board(komas) => komas }
-    println(isCheckmate, isOuCatch, enemyOuTakeKomaStock.nonEmpty,isWin)
 
     board = (isCheckmate, isOuCatch) match {
       case (_, Some(true)) => isSenteTurnState match { //isOuCatch
@@ -886,6 +884,7 @@ object ShogiBoard extends JFXApp {
         pastBoard = board
       }
 
+      /** 成り不成の処理 */
       if (mustNari) {
         board = board.nariKoma(selectedCellIndex) //強制的に成り、相手の手番へ
         isSenteTurnState = switchTurn(isSenteTurnState)
@@ -898,6 +897,7 @@ object ShogiBoard extends JFXApp {
 
       board = board.moveKoma(selectedCellIndex, clickedIndex)
 
+      /** 棋譜の出力 */
       val place = clickedIndex
       val movedKoma = {
         //mustNariの場合はここで棋譜に追加、canNariの場合はボタンを選択した時に追加する方式に
@@ -905,18 +905,19 @@ object ShogiBoard extends JFXApp {
         else if (canSetFromHand) board.findPlaceKomaKind(clickedIndex).name + "打"
         else board.findPlaceKomaKind(clickedIndex).name
       }
+
       val tate = (clickedIndex / 9 + 1).toString
       val yoko = (9 - (clickedIndex % 9)).toString
-
       kifu = yoko :: tate :: movedKoma :: kifu
 
       if (optOnBoardKomaState.contains(false)){
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
       }
 
+      /** 初期化 */
       selectedCellIndex = -100
-      optIsSenteKomaState = None
       clickedKomaKind = ClickedKomaState.None
+      optIsSenteKomaState = None
       optOnBoardKomaState = None
     }
 
@@ -978,12 +979,17 @@ object ShogiBoard extends JFXApp {
         isCheckmate = Some(true)
         logOutPut
       }
-      if (enemyOuTakeKomaStock.nonEmpty) {
+
+      var notEnemyTurnCatch = true
+      enemyOuTakeKomaStock.foreach(i =>
+        if (board.findPlaceKomaisSente(i).contains(!isSenteTurnState)) notEnemyTurnCatch = false) //先手番のなのに、後手番の駒で取ろうとしていた
+
+      if (enemyOuTakeKomaStock.nonEmpty && notEnemyTurnCatch && //先手番のなのに、後手番の駒で取ろうとしているのは許容しない
+        !(isCanNari && board.findPlaceKomaisSente(stockNariIndex).contains(isSenteTurnState))) { //手番で、手側側の駒が成ろうとしてる状態を除く
         isWin = true
         isOuCatch = Some(true)
         logOutPut
       }
-
     }
 
     def initializationOrWaitFlow = {
@@ -1022,6 +1028,7 @@ object ShogiBoard extends JFXApp {
         case _ => List("")
       }
       initializeNariGomaState //状態を元に戻す
+      tumiCheckFlow //成りの状態を加えたらチェック
     }
 
     def fuNariChoiceFlow = {
@@ -1030,6 +1037,7 @@ object ShogiBoard extends JFXApp {
         case _ => List("")
       }
       initializeNariGomaState //状態を元に戻す
+      tumiCheckFlow //不成の状態を加えたらチェック
     }
     /** ここまで駒をクリックした時に使われる関数群 */
 

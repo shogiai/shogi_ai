@@ -31,6 +31,15 @@ case class Board(komas: List[Koma]) {
     }
   }
 
+  //stockNariIndex
+  def findPlaceKomaisSente(place: Int): Option[Boolean] = {
+    komas.filter(_.index == place) match {
+      case List(Koma(kind, index, isSente, onBoard)) => Some(isSente)
+      case _ => None //起こりえない
+    }
+  }
+
+
   //駒が取られた時の所有権の変更
   def ownerChangeKoma(place: Int, isSente: Boolean): Board = komas.zipWithIndex.find(_._1.index == place) match {
     case Some((koma, i)) => Board(komas.updated(i, koma.ownerChange(isSente)))
