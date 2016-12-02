@@ -15,42 +15,7 @@ import scalafx.scene.{Group, Scene}
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  var kifu: List[String] = List("まで","手で","勝ち")
-  val LOG_FILE_PATH = "kifu.txt" //ログ出力先
-  def logOutPut {
-    val tesu = ((kifu.length + 1)/3 - 1).toString
-    val winPlayer = (kifu.length + 1) % 2 match {
-        case 1 => "先手"
-        case 0 => "後手"
-        case _ => "??"
-    }
-
-    var outPutKifu: List[String] = kifu.takeRight(3)
-    outPutKifu = outPutKifu match {
-      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
-      case  _ => List("")
-    }
-
-    kifu = kifu.dropRight(3)
-    while(kifu.length >= 3) {
-      val itteList = kifu.take(3)
-      val itte: String = itteList match {
-        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
-        case _ => ""
-      }
-
-      outPutKifu = itte :: outPutKifu
-      kifu = kifu.drop(3)
-    }
-
-    val in = new File(LOG_FILE_PATH)
-    val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
-    outPutKifu.foreach(itte => out.print(itte+" "))
-    out.println("")
-    out.close
-  }
-
-  val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   val initalChoiceKoma = true
 
   var board: Board = Board(
@@ -139,6 +104,7 @@ object ShogiBoard extends JFXApp {
   var isSenteTurnState: Boolean = true
   var (isWin, isCanNari, isNifu) = (false, false, false)
   var isCheckmate: Option[Boolean] = None
+  var isOuCatch: Option[Boolean] = None
   var enemyOuTakeKomaStock: List[Int] = Nil
 
   def boardSwitch :Board = {
@@ -147,7 +113,7 @@ object ShogiBoard extends JFXApp {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(40) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(40) }
 
-    board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったまで出していいとき
+    board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったを出していいとき
       val addBoard: Board = Board(
         Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
           Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
@@ -155,14 +121,7 @@ object ShogiBoard extends JFXApp {
           onBoardKomas)
       addBoard
     }
-    else if (!isCanNari) { //詰み判定まで出していいとき
-    val addBoard: Board = Board(
-        Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
-          Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
-          onBoardKomas)
-      addBoard
-    }
-    else { //初期化しか出してはいけないとき
+    else { //待ったを出してはいけないとき
       val addInitializeBoard: Board = Board(
         Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
           Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
@@ -173,54 +132,40 @@ object ShogiBoard extends JFXApp {
     /** その他テンプレートの更新 */
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
     val displayKoma: Boolean = true
-    board = (isWin, isCanNari, isNifu, isSenteTurnState) match { //1手指すと出てくる
-      case (false, false, false, true) => {
+    board = (isCanNari, isNifu, isSenteTurnState) match { //1手指すと出てくる
+      case (false, false, true) => {
         val normalBoard: Board = Board( //先手番
           Koma(ClickedKomaState.Sen, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 109, isSenteTurnState, displayKoma) ::
             realKomas)
         normalBoard
       }
-      case (false, false, false, false) => {
+      case (false, false, false) => {
         val normalBoard: Board = Board( //後手番
           Koma(ClickedKomaState.Go, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 109, isSenteTurnState, displayKoma) ::
             realKomas)
         normalBoard
       }
-      case (true, _, _, false) => { //駒を取った時には後手の番に移っている
-        val SenteWinBoard: Board = Board( //先手の勝ち
-          Koma(ClickedKomaState.Sen, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
-            (Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) ::
-              realKomas))
-        SenteWinBoard
-      }
-      case (true, _, _, true) => {
-        val GoteWinboard: Board = Board( //後手の勝ち
-          Koma(ClickedKomaState.Go, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
-            (Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) ::
-              realKomas))
-        GoteWinboard
-      }
-      case (_, true, _, true) => {
-        val SenteWinBoard: Board = Board( //成りor不成
+      case (true, _, true) => {
+        val SenteNariFunariBoard: Board = Board( //成りor不成
           Koma(ClickedKomaState.Na, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Slash, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) ::
             realKomas)
-        SenteWinBoard
+        SenteNariFunariBoard
       }
-      case (_, true, _, false) => {
-        val GoteWinboard: Board = Board( //成りor不成
+      case (true, _, false) => {
+        val GoteNariFunariboard: Board = Board( //成りor不成
           Koma(ClickedKomaState.Na, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 107, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Slash, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Not, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Na, 110, isSenteTurnState, displayKoma) :: realKomas)
-        GoteWinboard
+        GoteNariFunariboard
       }
-      case (_, _, true, true) => {
+      case (_, true, true) => {
         val SenteNifuBoard: Board = Board( //二歩です
           Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
             realKomas)
         SenteNifuBoard
       }
-      case (_, _, true, false) => {
+      case (_, true, false) => {
         val GoteNifuboard: Board = Board( //二歩です
           Koma(ClickedKomaState.Ni, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Fu, 108, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) ::
@@ -233,53 +178,47 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    val secondKomas: List[Koma] = board match { case Board(komas) => komas }
 
-    board = (isCheckmate, enemyOuTakeKomaStock.nonEmpty) match {
-      case (_, true) => isSenteTurnState match {
-        case true => { //先手の手番 => 勝ちあり(先手)
-        val senteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Ka, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 128, isSenteTurnState, displayKoma) ::
+    val secondKomas: List[Koma] = board match { case Board(komas) => komas }
+    println(isCheckmate, isOuCatch, enemyOuTakeKomaStock.nonEmpty,isWin)
+
+    board = (isCheckmate, isOuCatch) match {
+      case (_, Some(true)) => isSenteTurnState match { //isOuCatch
+        case true => { //先手の手番 => 先手の勝ち
+        val senteOuCatchBoard: Board = Board(
+            Koma(ClickedKomaState.Sen, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.Ka, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, isSenteTurnState, displayKoma) :: //先手の勝ち
+              Koma(ClickedKomaState.Ka, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 128, isSenteTurnState, displayKoma) ::
               Koma(ClickedKomaState.Ahira, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 134, isSenteTurnState, displayKoma) ::
               secondKomas)
-          senteTumiBoard
+          senteOuCatchBoard
         }
-        case false => { //後手の手番 => 勝ちあり(後手)
-        val goteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Ka, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 86, isSenteTurnState, displayKoma) ::
+        case false => { //後手の手番 => 後手の勝ち
+        val goteOuCatchBoard: Board = Board(
+            Koma(ClickedKomaState.Go, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.Ka, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, isSenteTurnState, displayKoma) :: //後手の勝ち
+              Koma(ClickedKomaState.Ka, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 86, isSenteTurnState, displayKoma) ::
               Koma(ClickedKomaState.Ahira, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ri, 92, isSenteTurnState, displayKoma) ::
               secondKomas)
-          goteTumiBoard
+          goteOuCatchBoard
         }
       }
-      case (Some(true), false) => isSenteTurnState match {
-        case true => { //先手の手番 => 先手詰み(先手)
+      case (Some(true), _) => isSenteTurnState match { //isCheckmate
+        case true => { //先手の手番 => 後手の勝ち
           val senteTumiBoard: Board = Board(
+            Koma(ClickedKomaState.Go, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) :: //後手の勝ち
             Koma(ClickedKomaState.Sen, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 128, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Tumi, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 134, isSenteTurnState, displayKoma) ::
               secondKomas)
           senteTumiBoard
         }
-        case false => { //後手の手番 => 後手詰み(後手)
+        case false => { //後手の手番 => 先手の勝ち
           val goteTumiBoard: Board = Board(
+            Koma(ClickedKomaState.Sen, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) :: //先手の勝ち
             Koma(ClickedKomaState.Go, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 86, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Tumi, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 92, isSenteTurnState, displayKoma) ::
-              secondKomas)
-          goteTumiBoard
-        }
-      }
-      case (Some(false), false) => isSenteTurnState match {
-        case true => { //先手の手番 => 詰みなし(先手表示)
-        val senteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Tumi, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 128, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Nahira, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Si, 134, isSenteTurnState, displayKoma) ::
-              secondKomas)
-          senteTumiBoard
-        }
-        case false => { //後手の手番 => 詰みなし(後手表示)
-        val goteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Tumi, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 86, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Nahira, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Si, 92, isSenteTurnState, displayKoma) ::
               secondKomas)
           goteTumiBoard
         }
@@ -322,13 +261,56 @@ object ShogiBoard extends JFXApp {
         lastKomas)
     }
     val outputKomas = BlankKomas.filterNot(koma => koma.kind == ClickedKomaState.Blank)
-
-    board = {
-      val addHandNumberBoard: Board = Board(outputKomas)
-      addHandNumberBoard
-    }
+    board = Board(outputKomas)
 
     board
+  }
+
+  /** 棋譜の出力 */
+  var kifu: List[String] = List("まで","手で","勝ち")
+  val LOG_FILE_PATH = "kifu.txt" //ログ出力先
+  def logOutPut {
+    val tesu = ((kifu.length + 1)/3 - 1).toString
+    val winPlayer: String = enemyOuTakeKomaStock.nonEmpty match {
+      case true => {
+        (kifu.length + 1) % 2 match {
+          case 1 => "後手"
+          case 0 => "先手"
+          case _ => "??"
+        }
+      }
+      case false => {
+        (kifu.length + 1) % 2 match {
+          case 1 => "先手"
+          case 0 => "後手"
+          case _ => "??"
+        }
+      }
+    }
+
+    var outPutKifu: List[String] = kifu.takeRight(3)
+    outPutKifu = outPutKifu match {
+      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
+      case  _ => List("")
+    }
+
+    kifu = kifu.dropRight(3)
+    while(kifu.length >= 3) {
+      val itteList = kifu.take(3)
+      val itte: String = itteList match {
+        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
+        case _ => ""
+      }
+
+      outPutKifu = itte :: outPutKifu
+      kifu = kifu.drop(3)
+    }
+
+    val in = new File(LOG_FILE_PATH)
+    val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
+    outPutKifu.foreach(itte => out.print(itte+" "))
+    out.println("")
+    out.close
   }
 
   /** 描画定義 */
@@ -719,6 +701,7 @@ object ShogiBoard extends JFXApp {
 
     def initializeTumiState = {
       isCheckmate = None
+      isOuCatch = None
       tyuAiFalseList = Nil
       toIndexStock = Nil
       ouTookKomaStock = Nil
@@ -926,7 +909,6 @@ object ShogiBoard extends JFXApp {
       val yoko = (9 - (clickedIndex % 9)).toString
 
       kifu = yoko :: tate :: movedKoma :: kifu
-      if (isWin) logOutPut //棋譜の出力
 
       if (optOnBoardKomaState.contains(false)){
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
@@ -994,31 +976,34 @@ object ShogiBoard extends JFXApp {
       if (isCheckmateCheck) {
         isWin = true
         isCheckmate = Some(true)
+        logOutPut
       }
-      else isCheckmate = Some(false)
+      if (enemyOuTakeKomaStock.nonEmpty) {
+        isWin = true
+        isOuCatch = Some(true)
+        logOutPut
+      }
+
     }
 
     def initializationOrWaitFlow = {
       if (initializationBranch) {
-        optClickedKomaKind match { //初期化時の駒配置の選択が可能
-          case Some(ClickedKomaState.A) => board = initalBoard
-          case Some(ClickedKomaState.B) => board = newUnderFuInitalBoard
-          case Some(ClickedKomaState.C) => board = halfRandomBoard
-          case Some(ClickedKomaState.D) => board = allRandomBoard
-          case _ =>
+        board = optClickedKomaKind match { //初期化時の駒配置の選択が可能
+          case Some(ClickedKomaState.A) => initalBoard
+          case Some(ClickedKomaState.B) => newUnderFuInitalBoard
+          case Some(ClickedKomaState.C) => halfRandomBoard
+          case Some(ClickedKomaState.D) => allRandomBoard
+          case _ => board
         }
-        tumiCheckFlow
         pastBoard = board //待ったはなし
         kifu = List("まで","手で","勝ち")
         isSenteTurnState = true
       }
       else if (waitBranch) {
-        tumiCheckFlow
         board = pastBoard
         kifu = kifu.drop(3) //待ったをした場合を取り除く
         isSenteTurnState = !isSenteTurnState
       }
-
       firstClickFlag = false
       clickCancel
       isCanNari = false
@@ -1026,6 +1011,8 @@ object ShogiBoard extends JFXApp {
       isNifu = false
       selectedCellIndex = -100
       stockNariIndex = -1
+      initializeTumiState
+      tumiCheckFlow
     }
 
     def nariChoiceFlow = {
@@ -1110,7 +1097,6 @@ object ShogiBoard extends JFXApp {
 
       boardSwitch
       isNifu = false
-      initializeTumiState
       repaint
     })
     group
