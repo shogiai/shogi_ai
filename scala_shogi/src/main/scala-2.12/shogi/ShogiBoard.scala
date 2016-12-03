@@ -15,7 +15,7 @@ import scalafx.scene.{Group, Scene}
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   val initalChoiceKoma = true
 
   var board: Board = Board(
@@ -180,6 +180,7 @@ object ShogiBoard extends JFXApp {
 
     val secondKomas: List[Koma] = board match { case Board(komas) => komas }
 
+    //todo 王手です、も表示する
     board = (isCheckmate, isOuCatch) match {
       case (_, Some(true)) => isSenteTurnState match { //isOuCatch
         case true => { //先手の手番 => 先手の勝ち
