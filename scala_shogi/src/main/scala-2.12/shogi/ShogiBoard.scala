@@ -15,7 +15,7 @@ import scalafx.scene.{Group, Scene}
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
   val initalChoiceKoma = true
 
   var board: Board = Board(
@@ -1340,17 +1340,32 @@ object ShogiBoard extends JFXApp {
   ))
 
   //仮装条件での検証用のBoard
-  def testBoard: Board = Board(List(
-    /*
-    Koma(ClickedKomaState.Ou, 28, true, true), Koma(ClickedKomaState.Gin, 10, false, true), Koma(ClickedKomaState.Ou, 0, false, true), Koma(ClickedKomaState.Kyo, 9, false, true),
+  def testBoard2: Board = Board(List(
+    /*    Koma(ClickedKomaState.Ou, 28, true, true), Koma(ClickedKomaState.Gin, 10, false, true), Koma(ClickedKomaState.Ou, 0, false, true), Koma(ClickedKomaState.Kyo, 9, false, true),
     Koma(ClickedKomaState.Kei, 1, false, true), Koma(ClickedKomaState.Kin, 24, true, true), Koma(ClickedKomaState.Kyo, 113, true, false),
     Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Fu, 49, false, true),
-    Koma(ClickedKomaState.Kaku, 40, true, true), Koma(ClickedKomaState.Kei, 114, true, false)
-    */
+    Koma(ClickedKomaState.Kaku, 40, true, true), Koma(ClickedKomaState.Kei, 114, true, false)    */
     Koma(ClickedKomaState.Ou, 2, true, true), Koma(ClickedKomaState.Gin, 3, false, true), Koma(ClickedKomaState.Ou, 4, false, true), Koma(ClickedKomaState.Kin, 6, true, true),
     Koma(ClickedKomaState.Kin, 20, true, true), Koma(ClickedKomaState.Kin, 24, true, true), Koma(ClickedKomaState.Kyo, 113, true, false),
     Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Fu, 40, false, true)
-    //Koma(ClickedKomaState.Fu, 25, false, true), Koma(ClickedKomaState.Fu, 26, false, true), Koma(ClickedKomaState.Kyo, 101, false, false)
+  ))
+
+  //仮装条件での検証用のBoard
+  def testBoard: Board = Board(List(
+    Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false),
+    Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false),
+    Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false), Koma(ClickedKomaState.Fu, 112, true, false),
+    Koma(ClickedKomaState.Kyo, 113, true, false), Koma(ClickedKomaState.Kei, 114, true, false),
+    Koma(ClickedKomaState.Gin, 115, true, false), Koma(ClickedKomaState.Kin, 116, true, false), Koma(ClickedKomaState.Ou, 76, true, true),
+    Koma(ClickedKomaState.Kyo, 113, true, false), Koma(ClickedKomaState.Kei, 114, true, false), Koma(ClickedKomaState.Gin, 115, true, false), Koma(ClickedKomaState.Kin, 116, true, false),
+    Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Kaku, 124, true, false),
+    Koma(ClickedKomaState.Hisha, 89, false, false), Koma(ClickedKomaState.Kaku, 88, false, false),
+    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Kei, 102, false, false),
+    Koma(ClickedKomaState.Gin, 103, false, false), Koma(ClickedKomaState.Kin, 104, false, false), Koma(ClickedKomaState.Ou, 4, false, false),
+    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Kei, 102, false, false), Koma(ClickedKomaState.Gin, 103, false, false), Koma(ClickedKomaState.Kin, 104, false, false),
+    Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false),
+    Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false),
+    Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false)
   ))
 
 }
