@@ -15,7 +15,7 @@ import scalafx.scene.{Group, Scene}
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
 
-  val initalKomas: List[Koma] = testBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   val initalChoiceKoma = true
 
   var board: Board = Board(
