@@ -14,15 +14,63 @@ import scalafx.scene.{Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
-
   val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
-  val initalChoiceKoma = true
+  val initalLength: Int = initalKomas.length
+  val displayKoma: Boolean = true
 
   var board: Board = Board(
-    Koma(ClickedKomaState.A, 81, true, initalChoiceKoma) :: Koma(ClickedKomaState.B, 87, true, initalChoiceKoma) ::
-      Koma(ClickedKomaState.C, 93, true, initalChoiceKoma) :: Koma(ClickedKomaState.D, 99, true, initalChoiceKoma) :: //初期化
+    Koma(ClickedKomaState.A, 81, true, displayKoma) :: Koma(ClickedKomaState.B, 87, true, displayKoma) ::
+      Koma(ClickedKomaState.C, 93, true, displayKoma) :: Koma(ClickedKomaState.D, 99, true, displayKoma) :: //初期化
       initalKomas)
   var pastBoard: Board = board
+
+  /** 棋譜の出力 */
+  var kifu: List[String] = List("まで","手で","勝ち")
+  val LOG_FILE_PATH = "kifu.txt" //ログ出力先
+
+  def logOutPut {
+    val tesu = ((kifu.length + 1)/3 - 1).toString
+    val winPlayer: String = enemyOuTakeKomaStock.nonEmpty match {
+      case true => {
+        (kifu.length + 1) % 2 match {
+          case 1 => "後手"
+          case 0 => "先手"
+          case _ => "??"
+        }
+      }
+      case false => {
+        (kifu.length + 1) % 2 match {
+          case 1 => "先手"
+          case 0 => "後手"
+          case _ => "??"
+        }
+      }
+    }
+
+    var outPutKifu: List[String] = kifu.takeRight(3)
+    outPutKifu = outPutKifu match {
+      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
+      case  _ => List("")
+    }
+
+    kifu = kifu.dropRight(3)
+    while(kifu.length >= 3) {
+      val itteList = kifu.take(3)
+      val itte: String = itteList match {
+        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
+        case _ => ""
+      }
+
+      outPutKifu = itte :: outPutKifu
+      kifu = kifu.drop(3)
+    }
+
+    val in = new File(LOG_FILE_PATH)
+    val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
+    outPutKifu.foreach(itte => out.print(itte+" "))
+    out.println("")
+    out.close
+  }
 
   /** 将棋盤のテンプレートの切り替え */
 
@@ -108,30 +156,29 @@ object ShogiBoard extends JFXApp {
   var enemyOuTakeKomaStock: List[Int] = Nil
 
   def boardSwitch :Board = {
-    /** 初期化と待ったのボタン更新 */
-    val transitionKoma: Boolean = true
-    val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(40) }
-    val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(40) }
 
-    board = if (onBoardKomas != pastKomas && !isCanNari) { //待ったを出していいとき
+    /** 待ったのボタン更新 */
+    val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initalLength) }
+    val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initalLength) }
+
+    board = if (onBoardKomas != pastKomas && !isCanNari) {
       val addBoard: Board = Board(
-        Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
-          Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
-          Koma(ClickedKomaState.Ma, 117, true, transitionKoma) :: Koma(ClickedKomaState.Ltu, 123, true, transitionKoma) :: Koma(ClickedKomaState.TaHira, 129, true, transitionKoma) :: //待った
+          Koma(ClickedKomaState.Ma, 117, true, displayKoma) :: Koma(ClickedKomaState.Ltu, 123, true, displayKoma) :: Koma(ClickedKomaState.TaHira, 129, true, displayKoma) ::
           onBoardKomas)
       addBoard
-    }
-    else { //待ったを出してはいけないとき
-      val addInitializeBoard: Board = Board(
-        Koma(ClickedKomaState.A, 81, true, transitionKoma) :: Koma(ClickedKomaState.B, 87, true, transitionKoma) ::
-          Koma(ClickedKomaState.C, 93, true, transitionKoma) :: Koma(ClickedKomaState.D, 99, true, transitionKoma) :: //初期化
-          onBoardKomas)
-      addInitializeBoard
-    }
+    } else board
+
+    /** ABCDボタン更新 */
+    val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
+    val isInitial = kifu.length <= 3
+
+    board = if (isInitial) {
+      Board(Koma(ClickedKomaState.A, 81, true, displayKoma) :: Koma(ClickedKomaState.B, 87, true, displayKoma) ::
+        Koma(ClickedKomaState.C, 93, true, displayKoma) :: Koma(ClickedKomaState.D, 99, true, displayKoma) :: mattaKomas)
+    } else board
 
     /** その他テンプレートの更新 */
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
-    val displayKoma: Boolean = true
     board = (isCanNari, isNifu, isSenteTurnState) match { //1手指すと出てくる
       case (false, false, true) => {
         val normalBoard: Board = Board( //先手番
@@ -263,53 +310,6 @@ object ShogiBoard extends JFXApp {
     board = Board(outputKomas)
 
     board
-  }
-
-  /** 棋譜の出力 */
-  var kifu: List[String] = List("まで","手で","勝ち")
-  val LOG_FILE_PATH = "kifu.txt" //ログ出力先
-  def logOutPut {
-    val tesu = ((kifu.length + 1)/3 - 1).toString
-    val winPlayer: String = enemyOuTakeKomaStock.nonEmpty match {
-      case true => {
-        (kifu.length + 1) % 2 match {
-          case 1 => "後手"
-          case 0 => "先手"
-          case _ => "??"
-        }
-      }
-      case false => {
-        (kifu.length + 1) % 2 match {
-          case 1 => "先手"
-          case 0 => "後手"
-          case _ => "??"
-        }
-      }
-    }
-
-    var outPutKifu: List[String] = kifu.takeRight(3)
-    outPutKifu = outPutKifu match {
-      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
-      case  _ => List("")
-    }
-
-    kifu = kifu.dropRight(3)
-    while(kifu.length >= 3) {
-      val itteList = kifu.take(3)
-      val itte: String = itteList match {
-        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
-        case _ => ""
-      }
-
-      outPutKifu = itte :: outPutKifu
-      kifu = kifu.drop(3)
-    }
-
-    val in = new File(LOG_FILE_PATH)
-    val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
-    outPutKifu.foreach(itte => out.print(itte+" "))
-    out.println("")
-    out.close
   }
 
   /** 描画定義 */
