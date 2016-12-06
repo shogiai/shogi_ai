@@ -57,7 +57,7 @@ object ShogiBoard extends JFXApp {
     while(kifu.length >= 3) {
       val itteList = kifu.take(3)
       val itte: String = itteList match {
-        case List(yoko:String,tate:String,koma:String) => yoko+tate+koma
+        case List(yoko:String, tate:String, koma:String) => yoko + tate + koma
         case _ => ""
       }
 
@@ -67,9 +67,21 @@ object ShogiBoard extends JFXApp {
 
     val in = new File(LOG_FILE_PATH)
     val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
-    outPutKifu.foreach(itte => out.print(itte+" "))
+    var kaigyoCount = 0
+
+    outPutKifu.foreach(itte => {
+      out.print(itte+" ")
+
+      kaigyoCount = kaigyoCount + 1
+      if (kaigyoCount >= 24) { //24手に到達したら、改行してcountを0に戻す
+        out.println("")
+        kaigyoCount = 0
+      }
+    })
     out.println("")
+    if (kaigyoCount != 0) out.println("")
     out.close
+    kaigyoCount = 0
   }
 
   /** 将棋盤のテンプレートの切り替え */
@@ -165,7 +177,7 @@ object ShogiBoard extends JFXApp {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initalLength) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initalLength) }
 
-    board = if (onBoardKomas != pastKomas && !isCanNari && !ryoPushed) {
+    board = if (onBoardKomas != pastKomas && !ryoPushed) {
       val addBoard: Board = Board(
           Koma(ClickedKomaState.Ma, 117, true, displayKoma) :: Koma(ClickedKomaState.Ltu, 123, true, displayKoma) :: Koma(ClickedKomaState.TaHira, 129, true, displayKoma) ::
           onBoardKomas)
@@ -872,7 +884,7 @@ object ShogiBoard extends JFXApp {
       (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 106) || (optClickedKomaKind.contains(ClickedKomaState.Ri) && selectedCellIndex == 107)
     }
     def funariChoiceBranch: Boolean = {
-      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || (optClickedKomaKind.contains(ClickedKomaState.Not) && selectedCellIndex == 110)
+      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || (optClickedKomaKind.contains(ClickedKomaState.Not) && selectedCellIndex == 109)
     }
     def touRyoBranch: Boolean = (optClickedKomaKind.contains(ClickedKomaState.Tou) || optClickedKomaKind.contains(ClickedKomaState.Ryo)) && selectedCellIndex == 105
 
@@ -1123,7 +1135,7 @@ object ShogiBoard extends JFXApp {
       else if (waitBranch) {
         board = pastBoard
         kifu = kifu.drop(3) //待ったをした場合を取り除く
-        isSenteTurnState = !isSenteTurnState
+        if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
       firstClickFlag = false
       clickCancel
