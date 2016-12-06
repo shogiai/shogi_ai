@@ -384,6 +384,7 @@ object ShogiBoard extends JFXApp {
   var stockNariIndex: Int = -1
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
+  var utu = false
 
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
@@ -1018,7 +1019,7 @@ object ShogiBoard extends JFXApp {
       val movedKoma = {
         //mustNariの場合はここで棋譜に追加、canNariの場合はボタンを選択した時に追加する方式に
         if (mustNari) board.findPlaceKomaKind(clickedIndex).name + "成り"
-        else if (canSetFromHand) board.findPlaceKomaKind(clickedIndex).name + "打"
+        else if (utu) board.findPlaceKomaKind(clickedIndex).name + "打"
         else board.findPlaceKomaKind(clickedIndex).name
       }
 
@@ -1073,7 +1074,9 @@ object ShogiBoard extends JFXApp {
       if (toMoveBoard && optIsSenteKoma.isEmpty &&
         !(clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))) isNifu = true
       if (canSetFromHand) {
+        utu = true
         playAndInitialize
+        utu = false
         tumiCheckFlow
       }
       else clickCancel
@@ -1154,7 +1157,6 @@ object ShogiBoard extends JFXApp {
       tumiCheckFlow //不成の状態を加えたらチェック
     }
 
-    //todo 押した側の負け表示としたい
     def touRyoFlow = {
       if (touPushed) {
         ryoPushed = true
