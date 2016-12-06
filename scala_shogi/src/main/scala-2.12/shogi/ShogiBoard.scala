@@ -119,6 +119,7 @@ object ShogiBoard extends JFXApp {
 
     case object Ban extends ClickedKomaState("番")
     case object Ni extends ClickedKomaState("二")
+    case object DisplayOu extends ClickedKomaState("王")
     case object De extends ClickedKomaState("で")
     case object Su extends ClickedKomaState("す")
 
@@ -168,7 +169,9 @@ object ShogiBoard extends JFXApp {
   var (isWin, isCanNari, isNifu) = (false, false, false)
   var isCheckmate: Option[Boolean] = None
   var isOuCatch: Option[Boolean] = None
+
   var enemyOuTakeKomaStock: List[Int] = Nil
+  var ouTookKomaStock: List[Int] = Nil
   var (touPushed, ryoPushed) = (false, false)
 
   def boardSwitch :Board = {
@@ -248,8 +251,8 @@ object ShogiBoard extends JFXApp {
     /** 勝敗系のテンプレートの更新 */
     val secondKomas: List[Koma] = board match { case Board(komas) => komas }
 
-    board = (isOuCatch, isCheckmate, ryoPushed) match {
-      case (Some(true), _, _) => isSenteTurnState match { //isOuCatch
+    board = (isOuCatch, isCheckmate, ryoPushed, ouTookKomaStock.nonEmpty) match {
+      case (Some(true), _, _, _) => isSenteTurnState match { //isOuCatch
         case true => { //先手の手番 => 先手の勝ち
         val senteOuCatchBoard: Board = Board(
             Koma(ClickedKomaState.Sen, 106, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, isSenteTurnState, displayKoma) ::
@@ -269,7 +272,7 @@ object ShogiBoard extends JFXApp {
           goteOuCatchBoard
         }
       }
-      case (_, Some(true), _) => isSenteTurnState match { //isCheckmate
+      case (_, Some(true), _, _) => isSenteTurnState match { //isCheckmate
         case true => { //先手の手番 => 後手の勝ち
           val senteTumiBoard: Board = Board(
             Koma(ClickedKomaState.Go, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
@@ -289,7 +292,7 @@ object ShogiBoard extends JFXApp {
           goteTumiBoard
         }
       }
-      case (_, _, true) => isSenteTurnState match { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
+      case (_, _, true, _) => isSenteTurnState match { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
         case true => { //先手の手番 => 後手の勝ち
         val senteToryoBoard: Board = Board(
             Koma(ClickedKomaState.Go, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
@@ -300,6 +303,20 @@ object ShogiBoard extends JFXApp {
         val goteToryoBoard: Board = Board(
             Koma(ClickedKomaState.Sen, 106, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 107, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.No, 108, !isSenteTurnState, displayKoma) ::
               Koma(ClickedKomaState.Ka, 109, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 110, !isSenteTurnState, displayKoma) :: secondKomas) //先手の勝ち
+          goteToryoBoard
+        }
+      }
+      case (_, _, _, true) => isSenteTurnState match { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
+        case true => { //先手の手番 => 王手です(先手)
+        val senteToryoBoard: Board = Board(
+            Koma(ClickedKomaState.DisplayOu, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 128, isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.De, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 134, isSenteTurnState, displayKoma) :: secondKomas) //王手です
+          senteToryoBoard
+        }
+        case false => { //後手の手番 => 王手です(後手)
+        val goteToryoBoard: Board = Board(
+            Koma(ClickedKomaState.DisplayOu, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 86, isSenteTurnState, displayKoma) ::
+              Koma(ClickedKomaState.De, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 92, isSenteTurnState, displayKoma) :: secondKomas) //王手です
           goteToryoBoard
         }
       }
@@ -511,7 +528,6 @@ object ShogiBoard extends JFXApp {
     /** 王が詰んでいるかチェックするためのState */
     var tyuAiFalseList: List[Int] = Nil
     var toIndexStock: List[Int] = Nil
-    var ouTookKomaStock: List[Int] = Nil
     var canNotTyuAi: List[Int] = Nil
     var (canTyuAiFlag: Boolean, notGetBackKoma: Boolean, notGetBackTyuaiKoma: Boolean) = (true, true, true)
 
@@ -1048,6 +1064,9 @@ object ShogiBoard extends JFXApp {
       clickedKomaKind = ClickedKomaState.None
       optIsSenteKomaState = None
       optOnBoardKomaState = None
+      //王を取ろうとしていた駒の情報も初期化
+      enemyOuTakeKomaStock = Nil
+      ouTookKomaStock = Nil
     }
 
     /** 盤上の駒を動かす時のtakeKomaとplayAndInitializeの条件分岐処理をまとめた */
