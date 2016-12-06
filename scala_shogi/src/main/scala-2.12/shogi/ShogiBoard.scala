@@ -665,7 +665,7 @@ object ShogiBoard extends JFXApp {
                 afterMoveStock = reCheckfromIndex :: afterMoveStock
               }
             }
-            if (afterMoveStock.length <= 1) boardTyuai = true //駒の効きの数が変わらない場所が存在すれば詰みを回避している(true)
+            if (afterMoveStock.isEmpty) boardTyuai = true //動いた結果、駒の効きが無くなった場合は、中合いに成功している(true)
           })
           boardTyuai //一度でもtrueがあればtrueである
         }
@@ -750,14 +750,12 @@ object ShogiBoard extends JFXApp {
             }
           }
 
-          //true => Fu,False => Blankの駒をつけて、Blankの駒をはがしてから処理する
-          val tyuAiKomas =
-            Koma(tyuAiAdd(ownOuIndex - 10), ownOuIndex - 10, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(ownOuIndex - 9), ownOuIndex - 9, isSenteTurnState, tyuAiKoma) ::
-              Koma(tyuAiAdd(ownOuIndex - 8), ownOuIndex - 8, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(ownOuIndex - 1), ownOuIndex - 1, isSenteTurnState, tyuAiKoma) ::
-              Koma(tyuAiAdd(ownOuIndex + 1), ownOuIndex + 1, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(ownOuIndex + 8), ownOuIndex + 8, isSenteTurnState, tyuAiKoma) ::
-              Koma(tyuAiAdd(ownOuIndex + 9), ownOuIndex + 9, isSenteTurnState, tyuAiKoma) :: Koma(tyuAiAdd(ownOuIndex + 10), ownOuIndex + 10, isSenteTurnState, tyuAiKoma) ::
-              tumiCheckKomas
-          val tyuAiBoard: Board = Board(tyuAiKomas.filterNot(koma => koma.kind == ClickedKomaState.Blank))
+          val onAllBoard = (0 to 80).toList
+          val blankExcept = onAllBoard.filterNot(i => tyuAiAdd(i) == ClickedKomaState.Blank) //盤上からBlankのものを除外する処理が必要
+          var tyuaiAddStock: List[Koma] = tumiCheckKomas
+
+          blankExcept.foreach(i => tyuaiAddStock = Koma(tyuAiAdd(i), i, isSenteTurnState, tyuAiKoma) :: tyuaiAddStock)
+          val tyuAiBoard: Board = Board(tyuaiAddStock)
 
           for (fromIndex <- 0 to 80) {
             if (canTakePlace(fromIndex, ownOuIndex, true, tyuAiBoard)) { //再度王が取られることがないかチェック
@@ -1341,10 +1339,6 @@ object ShogiBoard extends JFXApp {
 
   //仮装条件での検証用のBoard
   def testBoard2: Board = Board(List(
-    /*    Koma(ClickedKomaState.Ou, 28, true, true), Koma(ClickedKomaState.Gin, 10, false, true), Koma(ClickedKomaState.Ou, 0, false, true), Koma(ClickedKomaState.Kyo, 9, false, true),
-    Koma(ClickedKomaState.Kei, 1, false, true), Koma(ClickedKomaState.Kin, 24, true, true), Koma(ClickedKomaState.Kyo, 113, true, false),
-    Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Fu, 49, false, true),
-    Koma(ClickedKomaState.Kaku, 40, true, true), Koma(ClickedKomaState.Kei, 114, true, false)    */
     Koma(ClickedKomaState.Ou, 2, true, true), Koma(ClickedKomaState.Gin, 3, false, true), Koma(ClickedKomaState.Ou, 4, false, true), Koma(ClickedKomaState.Kin, 6, true, true),
     Koma(ClickedKomaState.Kin, 20, true, true), Koma(ClickedKomaState.Kin, 24, true, true), Koma(ClickedKomaState.Kyo, 113, true, false),
     Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Fu, 40, false, true)
@@ -1359,13 +1353,15 @@ object ShogiBoard extends JFXApp {
     Koma(ClickedKomaState.Gin, 115, true, false), Koma(ClickedKomaState.Kin, 116, true, false), Koma(ClickedKomaState.Ou, 76, true, true),
     Koma(ClickedKomaState.Kyo, 113, true, false), Koma(ClickedKomaState.Kei, 114, true, false), Koma(ClickedKomaState.Gin, 115, true, false), Koma(ClickedKomaState.Kin, 116, true, false),
     Koma(ClickedKomaState.Hisha, 125, true, false), Koma(ClickedKomaState.Kaku, 124, true, false),
+    Koma(ClickedKomaState.Ou, 4, false, false),Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false),
+    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Gin, 103, false, false),
     Koma(ClickedKomaState.Hisha, 89, false, false), Koma(ClickedKomaState.Kaku, 88, false, false),
-    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Kei, 102, false, false),
-    Koma(ClickedKomaState.Gin, 103, false, false), Koma(ClickedKomaState.Kin, 104, false, false), Koma(ClickedKomaState.Ou, 4, false, false),
-    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Kei, 102, false, false), Koma(ClickedKomaState.Gin, 103, false, false), Koma(ClickedKomaState.Kin, 104, false, false),
+    Koma(ClickedKomaState.Kei, 102, false, false),
+    Koma(ClickedKomaState.Gin, 103, false, false), Koma(ClickedKomaState.Kin, 104, false, false),
+    Koma(ClickedKomaState.Kyo, 101, false, false), Koma(ClickedKomaState.Kei, 102, false, false), Koma(ClickedKomaState.Kin, 104, false, false),
     Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false),
     Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false),
-    Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false), Koma(ClickedKomaState.Fu, 100, false, false)
+    Koma(ClickedKomaState.Fu, 100, false, false)
   ))
 
 }
