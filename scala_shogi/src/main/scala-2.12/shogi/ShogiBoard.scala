@@ -166,7 +166,7 @@ object ShogiBoard extends JFXApp {
           Koma(ClickedKomaState.Ma, 117, true, displayKoma) :: Koma(ClickedKomaState.Ltu, 123, true, displayKoma) :: Koma(ClickedKomaState.TaHira, 129, true, displayKoma) ::
           onBoardKomas)
       addBoard
-    } else board
+    } else Board(onBoardKomas)
 
     /** ABCDボタン更新 */
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
@@ -175,7 +175,7 @@ object ShogiBoard extends JFXApp {
     board = if (isInitial) {
       Board(Koma(ClickedKomaState.A, 81, true, displayKoma) :: Koma(ClickedKomaState.B, 87, true, displayKoma) ::
         Koma(ClickedKomaState.C, 93, true, displayKoma) :: Koma(ClickedKomaState.D, 99, true, displayKoma) :: mattaKomas)
-    } else board
+    } else Board(mattaKomas)
 
     /** その他テンプレートの更新 */
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
