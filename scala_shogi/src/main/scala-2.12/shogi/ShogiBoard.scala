@@ -103,7 +103,6 @@ object ShogiBoard extends JFXApp {
 
     case object Not extends ClickedKomaState("不")
     case object Na extends ClickedKomaState("成")
-    case object Ri extends ClickedKomaState("り")
     case object Slash extends ClickedKomaState("/")
 
     case object Ban extends ClickedKomaState("番")
@@ -123,6 +122,7 @@ object ShogiBoard extends JFXApp {
     case object Tumi extends ClickedKomaState("詰")
     case object Mi extends ClickedKomaState("み")
     case object Ahira extends ClickedKomaState("あ")
+    case object Ri extends ClickedKomaState("り")
     case object Nahira extends ClickedKomaState("な")
     case object Si extends ClickedKomaState("し")
 
@@ -847,7 +847,7 @@ object ShogiBoard extends JFXApp {
     }
 
     def nariChoiceBranch: Boolean = {
-      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 106) || optClickedKomaKind.contains(ClickedKomaState.Ri)
+      (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 106) || (optClickedKomaKind.contains(ClickedKomaState.Ri) && selectedCellIndex == 107)
     }
     def funariChoiceBranch: Boolean = {
       (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || optClickedKomaKind.contains(ClickedKomaState.Not)
