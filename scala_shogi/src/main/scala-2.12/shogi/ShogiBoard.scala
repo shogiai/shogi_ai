@@ -1289,8 +1289,11 @@ object ShogiBoard extends JFXApp {
         || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) label.setFont(Font(25))
       else label.setFont(Font(30))
       label.setMaxSize(30, 30)
+
       label.setLayoutX(25)
-      label.setLayoutY(25)
+      if (koma.isSente) label.setLayoutY(25)
+      else label.setLayoutY(20)
+
       label.setAlignment(Pos.Center)
       label
     }
