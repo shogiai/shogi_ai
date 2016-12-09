@@ -408,7 +408,7 @@ object ShogiBoard extends JFXApp {
   /** cellObjGroup内で使われるStateを定義 */
   //todo 変数をOption型にする
   var selectedCellIndex: Int = -100
-  var stockNariIndex: Int = -1
+  var stockNariIndex: Option[Int] = None
   var optIsSenteKomaState: Option[Boolean] = None
   var optOnBoardKomaState: Option[Boolean] = None
   var utu = false
@@ -1013,12 +1013,12 @@ object ShogiBoard extends JFXApp {
     /** 成り駒フラグの処理 */
     def addNariGomaState = {
       isCanNari = true //成れる場合は成り不成選択のフラグを立てる
-      stockNariIndex = clickedIndex
+      stockNariIndex = Some(clickedIndex)
     }
     def initializeNariGomaState = {
       isCanNari = false
       isSenteTurnState = switchTurn(isSenteTurnState)
-      stockNariIndex = -1
+      stockNariIndex = None
       selectedCellIndex = -100
     }
 
@@ -1162,13 +1162,13 @@ object ShogiBoard extends JFXApp {
       touPushed = false
       ryoPushed = false
       selectedCellIndex = -100
-      stockNariIndex = -1
+      stockNariIndex = None
       initializeTumiState
       tumiCheckFlow
     }
 
     def nariChoiceFlow = {
-      board = board.nariKoma(stockNariIndex)
+      board = board.nariKoma(stockNariIndex.getOrElse(-1))
       kifu = kifu match { //kifuListの3番目に不成を追加
         case a :: b :: c :: past => a :: b :: c+"成り" :: past
         case _ => List("")
