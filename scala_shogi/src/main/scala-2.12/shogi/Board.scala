@@ -157,6 +157,63 @@ case class Board(komas: List[Koma]) {
       !koma.onBoard)
   }
 
+  /** 歩の動きの定義 */
+  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    isSenteTurnState match {
+      case true => now - toIndex == 9
+      case false => now - toIndex == -9
+    }
+  }
+
+  /** 香の動きの定義 */
+  def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    isSenteTurnState match {
+      case true => moveDistance % 9 == 0 && moveDistance > 0
+      case false => moveDistance % 9 == 0 && moveDistance < 0
+    }
+  }
+
+  /** 桂の動きの定義 */
+  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    isSenteTurnState match {
+      case true => moveDistance == 17 || moveDistance == 19
+      case false => moveDistance == -17 || moveDistance == -19
+    }
+  }
+
+  /** 銀の動きの定義 */
+  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9
+      case false => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9
+    }
+  }
+
+  /** 金の動きの定義 */
+  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
+      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
+    }
+  }
+
+  /** 飛車の動きの定義 */
+  def leftRightMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, toRow) = (row(now), row(toIndex))
+    nowRow == toRow
+  }
+
+  def upDownMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance % 9 == 0
+  }
+
   /** 角の動きの定義 */
   def rightUpLeftDownMove(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
@@ -168,6 +225,16 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => toRow - toColumn == nowRow - nowColumn)
+  }
+
+  /** 成り駒の動きの定義 */
+  def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
+      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
+    }
   }
 
   /** 盤面内を動いているか */
