@@ -181,9 +181,7 @@ object ShogiBoard extends JFXApp {
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initalLength) }
 
     board = if (onBoardKomas != pastKomas && !ryoPushed) {
-      val addBoard: Board = Board(
-          Koma(ClickedKomaState.Ma, 117, true, displayKoma) :: Koma(ClickedKomaState.Ltu, 123, true, displayKoma) :: Koma(ClickedKomaState.TaHira, 129, true, displayKoma) ::
-          onBoardKomas)
+      val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 117, isSenteTurnState, displayKoma) :: onBoardKomas)
       addBoard
     } else Board(onBoardKomas)
 
@@ -195,9 +193,9 @@ object ShogiBoard extends JFXApp {
       Board(Koma(ClickedKomaState.A, 81, true, displayKoma) :: Koma(ClickedKomaState.B, 87, true, displayKoma) ::
         Koma(ClickedKomaState.C, 93, true, displayKoma) :: Koma(ClickedKomaState.D, 99, true, displayKoma) :: mattaKomas)
     } else if (touPushed) { //了ボタンを出す
-      Board(Koma(ClickedKomaState.Ryo, 105, isSenteTurnState, displayKoma) :: mattaKomas)
+      Board(Koma(ClickedKomaState.Ryo, 111, isSenteTurnState, displayKoma) :: mattaKomas)
     } else { //投ボタンを出す
-      Board(Koma(ClickedKomaState.Tou, 105, isSenteTurnState, displayKoma) :: mattaKomas)
+      Board(Koma(ClickedKomaState.Tou, 111, isSenteTurnState, displayKoma) :: mattaKomas)
     }
 
     /** 説明系のテンプレートの更新 */
@@ -902,12 +900,12 @@ object ShogiBoard extends JFXApp {
     def funariChoiceBranch: Boolean = {
       (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || (optClickedKomaKind.contains(ClickedKomaState.Not) && selectedCellIndex == 109)
     }
-    def touRyoBranch: Boolean = (optClickedKomaKind.contains(ClickedKomaState.Tou) || optClickedKomaKind.contains(ClickedKomaState.Ryo)) && selectedCellIndex == 105
+    def touRyoBranch: Boolean = (optClickedKomaKind.contains(ClickedKomaState.Tou) || optClickedKomaKind.contains(ClickedKomaState.Ryo)) && selectedCellIndex == 111
 
     /** 初期化, 待った */
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
       optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D)
-    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma) || optClickedKomaKind.contains(ClickedKomaState.Ltu) || optClickedKomaKind.contains(ClickedKomaState.TaHira)
+    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma)
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
