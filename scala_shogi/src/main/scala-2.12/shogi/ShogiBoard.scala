@@ -424,7 +424,8 @@ object ShogiBoard extends JFXApp {
     def canMove(koma: ClickedKomaState): Boolean = {
       koma match {
         case ClickedKomaState.Fu => board.fuCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
-        case ClickedKomaState.Kyo => board.kyoCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.upJumpCheck(selectedCellIndex, clickedIndex) && board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
+        case ClickedKomaState.Kyo => board.kyoCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.upJumpCheck(selectedCellIndex, clickedIndex) && board.downJumpCheck(selectedCellIndex, clickedIndex) &&
+          board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
         case ClickedKomaState.Kei => board.keiCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
         case ClickedKomaState.Gin => board.ginCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
         case ClickedKomaState.Kin => board.kinCanMove(selectedCellIndex, clickedIndex, isSenteTurnState) && board.fromToMoveBoard(selectedCellIndex, clickedIndex) && board.notCrossOnBoard(selectedCellIndex, clickedIndex)
@@ -484,11 +485,11 @@ object ShogiBoard extends JFXApp {
     def isCheckmateCheck: Boolean = {
 
       def canMovePlace(koma: ClickedKomaState, fromIndex: Int, toIndex: Int, isTumasuKoma: Boolean, board: Board): Boolean = {
-        /* 後手の
-        飛び駒では、王の効きがある場合には飛び越えた効きになる */
+
         def komaCheck(issenteKomaCheck: Boolean) = koma match {
           case ClickedKomaState.Fu => board.fuCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
-          case ClickedKomaState.Kyo => board.kyoCanMove(fromIndex, toIndex, issenteKomaCheck) && board.checkMateUpJumpCheck(fromIndex, toIndex) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
+          case ClickedKomaState.Kyo => board.kyoCanMove(fromIndex, toIndex, issenteKomaCheck) && board.checkMateUpJumpCheck(fromIndex, toIndex) && board.checkMateUpJumpCheck(fromIndex, toIndex) &&
+            board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Kei => board.keiCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Gin => board.ginCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Kin => board.kinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
@@ -513,7 +514,7 @@ object ShogiBoard extends JFXApp {
         }
 
         val (senteKomaCheck, goteKomaCheck) = (true, false)
-        val canMovePlace: Boolean = isTumasuKoma match {
+        isTumasuKoma match {
           case true => {
             if (isSenteTurnState && isThereSenteKoma(fromIndex).contains(!isSenteTurnState)) komaCheck(goteKomaCheck) //先手のときは後手の駒を調べる
             else if (!isSenteTurnState && (isThereSenteKoma(fromIndex).contains(!isSenteTurnState))) komaCheck(senteKomaCheck) //後手のときは先手の駒を調べる
@@ -525,7 +526,6 @@ object ShogiBoard extends JFXApp {
             else false
           }
         }
-        canMovePlace
       }
 
       def canTakePlace(fromIndex: Int, toIndex: Int, isTumasuKoma: Boolean, board: Board): Boolean = {
@@ -543,7 +543,7 @@ object ShogiBoard extends JFXApp {
       /** def isCheckmateCheck内で使う汎用関数 */
 
       val ownOuIndex: Int = board.findKomaKind(ClickedKomaState.Ou, isSenteTurnState) //自分の王の位置
-      val enemyOuIndex: Int = board.findKomaKind(ClickedKomaState.Ou, !isSenteTurnState) //自分の王の位置
+      val enemyOuIndex: Int = board.findKomaKind(ClickedKomaState.Ou, !isSenteTurnState) //敵の王の位置
       /** getBackWithoutOuPattern */
       //toIndexに王以外の駒が動けるかどうかを調べることで、相手の駒を取り返せるかどうかを調べるための関数
       def canNotGetBack(toIndex: Int): Boolean = {
@@ -688,6 +688,18 @@ object ShogiBoard extends JFXApp {
         case _ => true
       }
 
+      def tyuAiAdd(index: Int): ClickedKomaState = {
+        handTyuai(index) match {
+          case true => ClickedKomaState.Fu
+          case false => {
+            boardTyuai(index) match {
+              case true => ClickedKomaState.Fu
+              case false => ClickedKomaState.Blank
+            }
+          }
+        }
+      }
+
       //中合いが効くパターン(ouTookKomaStock.length==1の場合に使う)
       def TyuaiPattern: Boolean = ouTookKomaStock.length match {
         case 1 => {
@@ -698,17 +710,6 @@ object ShogiBoard extends JFXApp {
           できる => Fuをおく,
           できない => 2.盤上の駒で中合いできるか判別
           できる => Fuをおく, できない => Blankをおく */
-          def tyuAiAdd(index: Int): ClickedKomaState = {
-            handTyuai(index) match {
-              case true => ClickedKomaState.Fu
-              case false => {
-                boardTyuai(index) match {
-                  case true => ClickedKomaState.Fu
-                  case false => ClickedKomaState.Blank
-                }
-              }
-            }
-          }
 
           val onAllBoard = (0 to 80).toList
           val blankExcept = onAllBoard.filterNot(i => tyuAiAdd(i) == ClickedKomaState.Blank) //盤上からBlankのものを除外する処理が必要
@@ -735,13 +736,11 @@ object ShogiBoard extends JFXApp {
         * - 王を取る駒が一つ => 王以外でその駒を取り返す、及び、中合いでの対応が可能
         * - 王に2つ以上の効きがある => 効きから逃げる以外の選択肢がない
         */
-      def isCheckmateCheckLogic: Boolean = {
-        if (ouTookKomaStock.isEmpty) false
-        else if (ouTookKomaStock.length == 1) {
-          ouEscapePattern && TyuaiPattern && getBackWithoutOuPattern && enemyOuTakeKomaStock.isEmpty
-        }
-        else {
-          ouEscapePattern && enemyOuTakeKomaStock.isEmpty
+      def isCheckmateCheckLogic(): Boolean = {
+        ouTookKomaStock.length match {
+          case 0 => false
+          case 1 => ouEscapePattern && TyuaiPattern && getBackWithoutOuPattern && enemyOuTakeKomaStock.isEmpty
+          case _ => ouEscapePattern && enemyOuTakeKomaStock.isEmpty
         }
       }
       //デバッグ用
@@ -749,7 +748,7 @@ object ShogiBoard extends JFXApp {
       println("enemyOuTakeKomaStock", enemyOuTakeKomaStock, "ouTookKomaStock", ouTookKomaStock)
       //println("enemy",enemyOuIndex,"own",ownOuIndex)
 
-      isCheckmateCheckLogic
+      isCheckmateCheckLogic()
     }
 
     def initializeTumiState = {

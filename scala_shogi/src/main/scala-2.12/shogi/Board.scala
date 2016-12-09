@@ -100,6 +100,7 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard)
   }
 
+  //todo
   /** 下にどれだけ動けるか */
   def downJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
@@ -155,6 +156,72 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
       (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
       !koma.onBoard)
+  }
+
+  /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いている */
+  //上にどれだけ動けるか
+  def checkMateUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //下にどれだけ動けるか
+  def checkMateDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard) ||
+    komas.forall(koma => koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左にどれだけ動けるか
+  def checkMateLeftJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) <= toColumn || column(koma.index) >= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右にどれだけ動けるか, 位置を判定
+  def checkMateRightJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右上方向にどれだけ動けるか
+  def checkMateRightUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
+      (nowColumn >= column(koma.index) && row(koma.index) >= nowRow) || (toColumn <= column(koma.index) && row(koma.index) <= toRow) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左下方向にどれだけ動けるか
+  def checkMateLeftDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
+      (toColumn >= column(koma.index) && row(koma.index) >= toRow) || (nowColumn <= column(koma.index) && row(koma.index) <= nowRow) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //左上方向にどれだけ動けるか
+  def checkMateLeftUpJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
+      (toColumn >= column(koma.index) && toRow >= row(koma.index)) || (nowColumn <= column(koma.index) && nowRow <= row(koma.index)) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //右下方向にどれだけ動けるか
+  def checkMateRightDownJumpCheck(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
+      (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
+      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
   }
 
   //同じ場所をクリックしていない
@@ -249,17 +316,6 @@ case class Board(komas: List[Koma]) {
     absMoveDistance == 1 || absMoveDistance == 9
   }
 
-
-  /** 成り駒の動きの定義 */
-  def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
-    val moveDistance = now - toIndex
-    val absMoveDistance = Math.abs(now - toIndex)
-    isSenteTurnState match {
-      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
-      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
-    }
-  }
-
   /** 盤面内を動いているか */
   def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
     now <= 80 && toIndex <= 80
@@ -277,70 +333,14 @@ case class Board(komas: List[Koma]) {
     } else true
   }
 
-
-  /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いた */
-  //上にどれだけ動けるか
-  def checkMateUpJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //下にどれだけ動けるか
-  def checkMateDownJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //左にどれだけ動けるか
-  def checkMateLeftJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) <= toColumn || column(koma.index) >= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //右にどれだけ動けるか, 位置を判定
-  def checkMateRightJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //右上方向にどれだけ動けるか
-  def checkMateRightUpJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      (nowColumn >= column(koma.index) && row(koma.index) >= nowRow) || (toColumn <= column(koma.index) && row(koma.index) <= toRow) ||
-      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //左下方向にどれだけ動けるか
-  def checkMateLeftDownJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
-      (toColumn >= column(koma.index) && row(koma.index) >= toRow) || (nowColumn <= column(koma.index) && row(koma.index) <= nowRow) ||
-      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //左上方向にどれだけ動けるか
-  def checkMateLeftUpJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      (toColumn >= column(koma.index) && toRow >= row(koma.index)) || (nowColumn <= column(koma.index) && nowRow <= row(koma.index)) ||
-      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
-  }
-
-  //右下方向にどれだけ動けるか
-  def checkMateRightDownJumpCheck(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
-      (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
-      !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  /** 成り駒の動きの定義 */
+  def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
+      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
+    }
   }
 
 }
