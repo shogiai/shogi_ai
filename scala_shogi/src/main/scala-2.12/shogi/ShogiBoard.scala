@@ -14,7 +14,7 @@ import scalafx.scene.{Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
-  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = testBoard2 match { case Board(komas) => komas }
   val initalLength: Int = initalKomas.length
   val displayKoma: Boolean = true
 
@@ -488,27 +488,27 @@ object ShogiBoard extends JFXApp {
 
         def komaCheck(issenteKomaCheck: Boolean) = koma match {
           case ClickedKomaState.Fu => board.fuCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
-          case ClickedKomaState.Kyo => board.kyoCanMove(fromIndex, toIndex, issenteKomaCheck) && board.checkMateUpJumpCheck(fromIndex, toIndex) && board.checkMateDownJumpCheck(fromIndex, toIndex) &&
+          case ClickedKomaState.Kyo => board.kyoCanMove(fromIndex, toIndex, issenteKomaCheck) && board.checkMateUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateDownJumpCheck(fromIndex, toIndex, isSenteTurnState) &&
             board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Kei => board.keiCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Gin => board.ginCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Kin => board.kinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.Ou => board.ouCanMove(fromIndex, toIndex) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
-          case ClickedKomaState.Kaku => (((board.leftUpRightDownMove(fromIndex, toIndex) && board.checkMateLeftUpJumpCheck(fromIndex, toIndex) && board.checkMateRightDownJumpCheck(fromIndex, toIndex)) //左上から右下方向
-            || (board.rightUpLeftDownMove(fromIndex, toIndex) && board.checkMateRightUpJumpCheck(fromIndex, toIndex) && board.checkMateLeftDownJumpCheck(fromIndex, toIndex))) //右上から左下方向
+          case ClickedKomaState.Kaku => (((board.leftUpRightDownMove(fromIndex, toIndex) && board.checkMateLeftUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateRightDownJumpCheck(fromIndex, toIndex, isSenteTurnState)) //左上から右下方向
+            || (board.rightUpLeftDownMove(fromIndex, toIndex) && board.checkMateRightUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateLeftDownJumpCheck(fromIndex, toIndex, isSenteTurnState))) //右上から左下方向
             && board.fromToMoveBoard(fromIndex, toIndex) && board.notOwn(fromIndex, toIndex))
-          case ClickedKomaState.Hisha => (((board.upDownMove(fromIndex, toIndex) && board.checkMateUpJumpCheck(fromIndex, toIndex) && board.checkMateDownJumpCheck(fromIndex, toIndex)) //縦(上下)方向
-            || (board.leftRightMove(fromIndex, toIndex) && board.checkMateRightJumpCheck(fromIndex, toIndex) && board.checkMateLeftJumpCheck(fromIndex, toIndex))) //横方向
+          case ClickedKomaState.Hisha => (((board.upDownMove(fromIndex, toIndex) && board.checkMateUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateDownJumpCheck(fromIndex, toIndex, isSenteTurnState)) //縦(上下)方向
+            || (board.leftRightMove(fromIndex, toIndex) && board.checkMateRightJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateLeftJumpCheck(fromIndex, toIndex, isSenteTurnState))) //横方向
             && board.fromToMoveBoard(fromIndex, toIndex) && board.notOwn(fromIndex, toIndex))
           case ClickedKomaState.To => board.nariKinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.NariKyo => board.nariKinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.NariKei => board.nariKinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
           case ClickedKomaState.NariGin => board.nariKinCanMove(fromIndex, toIndex, issenteKomaCheck) && board.fromToMoveBoard(fromIndex, toIndex) && board.notCrossOnBoard(fromIndex, toIndex)
-          case ClickedKomaState.Uma => ((board.leftUpRightDownMove(fromIndex, toIndex) && board.checkMateLeftUpJumpCheck(fromIndex, toIndex) && board.checkMateRightDownJumpCheck(fromIndex, toIndex))
-            || (board.rightUpLeftDownMove(fromIndex, toIndex) && board.checkMateRightUpJumpCheck(fromIndex, toIndex) && board.checkMateLeftDownJumpCheck(fromIndex, toIndex))
+          case ClickedKomaState.Uma => ((board.leftUpRightDownMove(fromIndex, toIndex) && board.checkMateLeftUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateRightDownJumpCheck(fromIndex, toIndex, isSenteTurnState))
+            || (board.rightUpLeftDownMove(fromIndex, toIndex) && board.checkMateRightUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateLeftDownJumpCheck(fromIndex, toIndex, isSenteTurnState))
             || board.umaMove(fromIndex, toIndex)) && board.notCrossOnBoard(fromIndex, toIndex) && board.fromToMoveBoard(fromIndex, toIndex) && board.notOwn(fromIndex, toIndex)
-          case ClickedKomaState.Ryu => ((board.upDownMove(fromIndex, toIndex) && board.checkMateUpJumpCheck(fromIndex, toIndex) && board.checkMateDownJumpCheck(fromIndex, toIndex)) //縦(上下)方向
-            || (board.leftRightMove(fromIndex, toIndex) && board.checkMateRightJumpCheck(fromIndex, toIndex) && board.checkMateLeftJumpCheck(fromIndex, toIndex)) //横方向
+          case ClickedKomaState.Ryu => ((board.upDownMove(fromIndex, toIndex) && board.checkMateUpJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateDownJumpCheck(fromIndex, toIndex, isSenteTurnState)) //縦(上下)方向
+            || (board.leftRightMove(fromIndex, toIndex) && board.checkMateRightJumpCheck(fromIndex, toIndex, isSenteTurnState) && board.checkMateLeftJumpCheck(fromIndex, toIndex, isSenteTurnState)) //横方向
             || board.ryuMove(fromIndex, toIndex)) && board.notCrossOnBoard(fromIndex, toIndex) && board.fromToMoveBoard(fromIndex, toIndex) && board.notOwn(fromIndex, toIndex)
           case _ => false
         }
