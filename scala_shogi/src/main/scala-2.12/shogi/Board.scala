@@ -100,6 +100,7 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard)
   }
 
+  //todo
   /** 下にどれだけ動けるか */
   def downJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
@@ -157,25 +158,7 @@ case class Board(komas: List[Koma]) {
       !koma.onBoard)
   }
 
-  /** 角の動きの定義 */
-  def rightUpLeftDownMove(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => toRow + toColumn == nowColumn + nowRow)
-  }
-
-  def leftUpRightDownMove(now: Int, toIndex: Int): Boolean = {
-    val (nowRow, nowColumn) = (row(now), column(now))
-    val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => toRow - toColumn == nowRow - nowColumn)
-  }
-
-  /** 盤面内を動いているか */
-  def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
-    now <= 80 && toIndex <= 80
-  }
-
-  /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いた */
+  /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いている */
   //上にどれだけ動けるか
   def checkMateUpJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
@@ -187,7 +170,8 @@ case class Board(komas: List[Koma]) {
   def checkMateDownJumpCheck(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
-    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+    komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard) ||
+    komas.forall(koma => koma.kind == ClickedKomaState.Ou)
   }
 
   //左にどれだけ動けるか
@@ -238,6 +222,125 @@ case class Board(komas: List[Koma]) {
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
       (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
       !koma.onBoard || koma.kind == ClickedKomaState.Ou)
+  }
+
+  //同じ場所をクリックしていない
+  def notOwn(now: Int, toIndex: Int): Boolean = {
+    val moveDistance = now - toIndex
+    moveDistance != 0
+  }
+
+  /** 歩の動きの定義 */
+  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
+    isSenteTurnState match {
+      case true => now - toIndex == 9
+      case false => now - toIndex == -9
+    }
+  }
+
+  /** 香の動きの定義 */
+  def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    isSenteTurnState match {
+      case true => moveDistance % 9 == 0 && moveDistance > 0
+      case false => moveDistance % 9 == 0 && moveDistance < 0
+    }
+  }
+
+  /** 桂の動きの定義 */
+  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    isSenteTurnState match {
+      case true => moveDistance == 17 || moveDistance == 19
+      case false => moveDistance == -17 || moveDistance == -19
+    }
+  }
+
+  /** 銀の動きの定義 */
+  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9
+      case false => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9
+    }
+  }
+
+  /** 金の動きの定義 */
+  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
+      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
+    }
+  }
+
+  /** 王の動きの定義 */
+  def ouCanMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10
+  }
+
+  /** 飛車の動きの定義 */
+  def leftRightMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, toRow) = (row(now), row(toIndex))
+    nowRow == toRow
+  }
+
+  def upDownMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance % 9 == 0
+  }
+
+  def ryuMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 8 || absMoveDistance == 10
+  }
+
+  /** 角の動きの定義 */
+  def rightUpLeftDownMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => toRow + toColumn == nowColumn + nowRow)
+  }
+
+  def leftUpRightDownMove(now: Int, toIndex: Int): Boolean = {
+    val (nowRow, nowColumn) = (row(now), column(now))
+    val (toRow, toColumn) = (row(toIndex), column(toIndex))
+    komas.forall(koma => toRow - toColumn == nowRow - nowColumn)
+  }
+
+  def umaMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 1 || absMoveDistance == 9
+  }
+
+  /** 盤面内を動いているか */
+  def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
+    now <= 80 && toIndex <= 80
+  }
+
+  /** 盤面内を横切っていないか */
+  def notCrossOnBoard(now: Int, toIndex: Int): Boolean = {
+    val moveDistance = now - toIndex
+    if ((now % 9) + 1 == 9) { //9筋の時
+      if (moveDistance == 8 || moveDistance == -1 || moveDistance == -10 || moveDistance == -19 || moveDistance == 17) false
+      else true
+    } else if ((now % 9) + 1 == 1) { //1筋の時
+      if (moveDistance == -8 || moveDistance == 1 || moveDistance == 10 || moveDistance == -17 || moveDistance == 19) false
+      else true
+    } else true
+  }
+
+  /** 成り駒の動きの定義 */
+  def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+    val moveDistance = now - toIndex
+    val absMoveDistance = Math.abs(now - toIndex)
+    isSenteTurnState match {
+      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
+      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
+    }
   }
 
 }
