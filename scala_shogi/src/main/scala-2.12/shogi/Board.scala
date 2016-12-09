@@ -164,7 +164,7 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 歩の動きの定義 */
-  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     isSenteTurnState match {
       case true => now - toIndex == 9
       case false => now - toIndex == -9
@@ -172,7 +172,7 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 香の動きの定義 */
-  def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+  def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val moveDistance = now - toIndex
     isSenteTurnState match {
       case true => moveDistance % 9 == 0 && moveDistance > 0
@@ -181,7 +181,7 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 桂の動きの定義 */
-  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val moveDistance = now - toIndex
     isSenteTurnState match {
       case true => moveDistance == 17 || moveDistance == 19
@@ -190,7 +190,7 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 銀の動きの定義 */
-  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val moveDistance = now - toIndex
     val absMoveDistance = Math.abs(now - toIndex)
     isSenteTurnState match {
@@ -200,7 +200,7 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 金の動きの定義 */
-  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
+  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val moveDistance = now - toIndex
     val absMoveDistance = Math.abs(now - toIndex)
     isSenteTurnState match {
@@ -209,6 +209,7 @@ case class Board(komas: List[Koma]) {
     }
   }
 
+  /** 王の動きの定義 */
   def ouCanMove(now: Int, toIndex: Int): Boolean = {
     val absMoveDistance = Math.abs(now - toIndex)
     absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10
