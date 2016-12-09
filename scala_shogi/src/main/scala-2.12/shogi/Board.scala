@@ -157,6 +157,12 @@ case class Board(komas: List[Koma]) {
       !koma.onBoard)
   }
 
+  //同じ場所をクリックしていない
+  def notOwn(now: Int, toIndex: Int): Boolean = {
+    val moveDistance = now - toIndex
+    moveDistance != 0
+  }
+
   /** 歩の動きの定義 */
   def fuCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
     isSenteTurnState match {
@@ -219,6 +225,11 @@ case class Board(komas: List[Koma]) {
     absMoveDistance % 9 == 0
   }
 
+  def ryuMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 8 || absMoveDistance == 10
+  }
+
   /** 角の動きの定義 */
   def rightUpLeftDownMove(now: Int, toIndex: Int): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
@@ -231,6 +242,12 @@ case class Board(komas: List[Koma]) {
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => toRow - toColumn == nowRow - nowColumn)
   }
+
+  def umaMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 1 || absMoveDistance == 9
+  }
+
 
   /** 成り駒の動きの定義 */
   def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
@@ -246,6 +263,19 @@ case class Board(komas: List[Koma]) {
   def fromToMoveBoard(now: Int, toIndex: Int): Boolean = {
     now <= 80 && toIndex <= 80
   }
+
+  /** 盤面内を横切っていないか */
+  def notCrossOnBoard(now: Int, toIndex: Int): Boolean = {
+    val moveDistance = now - toIndex
+    if ((now % 9) + 1 == 9) { //9筋の時
+      if (moveDistance == 8 || moveDistance == -1 || moveDistance == -10 || moveDistance == -19 || moveDistance == 17) false
+      else true
+    } else if ((now % 9) + 1 == 1) { //1筋の時
+      if (moveDistance == -8 || moveDistance == 1 || moveDistance == 10 || moveDistance == -17 || moveDistance == 19) false
+      else true
+    } else true
+  }
+
 
   /** 詰みが有る時、無い時を調べる時用, 王をすり抜け条件から抜いた */
   //上にどれだけ動けるか
