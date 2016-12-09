@@ -203,6 +203,11 @@ case class Board(komas: List[Koma]) {
     }
   }
 
+  def ouCanMove(now: Int, toIndex: Int): Boolean = {
+    val absMoveDistance = Math.abs(now - toIndex)
+    absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10
+  }
+
   /** 飛車の動きの定義 */
   def leftRightMove(now: Int, toIndex: Int): Boolean = {
     val (nowRow, toRow) = (row(now), row(toIndex))
