@@ -202,7 +202,6 @@ object ShogiBoard extends JFXApp {
     /** 局面評価の表示 */
     val isTaikyoku = kifu.length > 3
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
-    println("Value", board.evaluationFunction)
 
     board = if (isTaikyoku && !ryoPushed) {
       if (board.evaluationFunction >= 600) { //先手優勢

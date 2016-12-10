@@ -344,18 +344,15 @@ case class Board(komas: List[Koma]) {
     * 1. 駒得の評価値
     * 2. 王との距離の評価値
     * */
-  def evaluationFunction: Int = {
+  def realKomas = komas.takeRight(40)
+  def senteKomaKind: List[ClickedKomaState] = realKomas.filter(_.isSente == true).map(koma => koma.kind)
+  def goteKomaKind: List[ClickedKomaState] = realKomas.filter(_.isSente == false).map(koma => koma.kind)
+  def senteKomaIndex: List[Int] = realKomas.filter(_.isSente == true).map(koma => koma.index)
+  def goteKomaIndex: List[Int] = realKomas.filter(_.isSente == false).map(koma => koma.index)
 
-    val realKomas = komas.takeRight(40)
-    val senteKomaKind: List[ClickedKomaState] = realKomas.filter(_.isSente == true).map(koma => koma.kind)
-    val goteKomaKind: List[ClickedKomaState] = realKomas.filter(_.isSente == false).map(koma => koma.kind)
-    val senteKomaIndex: List[Int] = realKomas.filter(_.isSente == true).map(koma => koma.index)
-    val goteKomaIndex: List[Int] = realKomas.filter(_.isSente == false).map(koma => koma.index)
-
+  //駒を点数に変換
+  def senteKomaPoint: List[Int] = {
     var senteKomaPoint: List[Int] = Nil
-    var goteKomaPoint: List[Int] = Nil
-
-    //駒を点数に変換
     senteKomaKind.foreach(komaKind => {
       senteKomaPoint = komaKind match {
         case ClickedKomaState.Fu => 1 :: senteKomaPoint
@@ -376,7 +373,11 @@ case class Board(komas: List[Koma]) {
       }
     })
     senteKomaPoint = senteKomaPoint.reverse
+    senteKomaPoint
+  }
 
+  def goteKomaPoint: List[Int] = {
+    var goteKomaPoint: List[Int] = Nil
     goteKomaKind.foreach(komaKind => {
       goteKomaPoint = komaKind match {
         case ClickedKomaState.Fu => 1 :: goteKomaPoint
@@ -397,119 +398,119 @@ case class Board(komas: List[Koma]) {
       }
     })
     goteKomaPoint = goteKomaPoint.reverse
-
-    /** 王との距離の評価値 */
-    def senteOuDistanceEvaluation: Double = {
-      var senteDistanceEvaluationPoint: Double = 0
-      val (senteOuRow, senteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, true)), column(findKomaKind(ClickedKomaState.Ou, true)))
-
-      //先手の駒と先手の王の距離
-      for (i <- 0 to senteKomaPoint.length - 1) {
-        if (senteKomaIndex(i) < 80) {
-          //盤上の場合
-          val nowRow: Int = row(senteKomaIndex(i))
-          val nowColumn: Int = column(senteKomaIndex(i))
-          val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
-          senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + (16 - distanceToOu) * senteKomaPoint(i) //評価点 = (距離) * (駒の価値)
-        } else {
-          senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + 12 * senteKomaPoint(i) //持ち駒の場合
-        }
-      }
-      //後手の駒と先手の王の距離
-      for (i <- 0 to goteKomaPoint.length - 1) {
-        if (goteKomaIndex(i) < 80) { //盤上の場合
-        val nowRow: Int = row(goteKomaIndex(i))
-          val nowColumn: Int = column(goteKomaIndex(i))
-          val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
-          senteDistanceEvaluationPoint = (senteDistanceEvaluationPoint - (16 - distanceToOu) * goteKomaPoint(i)).toInt
-        } else {
-          senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * senteKomaPoint(i)
-        }
-      }
-      senteDistanceEvaluationPoint
-    }
-
-    def goteOuDistanceEvaluation: Double = {
-      var goteDistanceEvaluationPoint: Double = 0
-      val (goteOuRow, goteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, false)), column(findKomaKind(ClickedKomaState.Ou, false)))
-
-      //後手の駒と後手の王の距離
-      for (i <- 0 to goteKomaPoint.length - 1) {
-        if (goteKomaIndex(i) < 80) { //盤上の場合
-        val nowRow: Int = row(goteKomaIndex(i))
-          val nowColumn: Int = column(goteKomaIndex(i))
-          val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
-          goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + (16 - distanceToOu) * goteKomaPoint(i) //評価点 = (距離) * (駒の価値)
-        } else {
-          goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + 12 * goteKomaPoint(i) //持ち駒の場合
-        }
-      }
-      //先手の駒と後手の王の距離
-      for (i <- 0 to senteKomaPoint.length - 1) {
-        if (senteKomaIndex(i) < 80) {
-          val nowRow: Int = row(senteKomaIndex(i))
-          val nowColumn: Int = column(senteKomaIndex(i))
-          val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
-          goteDistanceEvaluationPoint =  goteDistanceEvaluationPoint - (16 - distanceToOu) * senteKomaPoint(i)
-        } else {
-          goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * goteKomaPoint(i)
-        }
-      }
-      goteDistanceEvaluationPoint
-    }
-
-    /** 駒得の評価値 */
-    def senteAmountEvaluation: Int = {
-      var senteAmountEvaluationPoint: Int = 0
-      senteKomaKind.foreach(komaKind =>
-        komaKind match {
-          case ClickedKomaState.Fu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 1
-          case ClickedKomaState.Kyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 3
-          case ClickedKomaState.Kei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 4
-          case ClickedKomaState.Gin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 5
-          case ClickedKomaState.Kin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 6
-          case ClickedKomaState.Kaku => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 10
-          case ClickedKomaState.Hisha => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 12
-          case ClickedKomaState.To => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 9
-          case ClickedKomaState.NariKyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
-          case ClickedKomaState.NariKei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
-          case ClickedKomaState.NariGin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 7
-          case ClickedKomaState.Uma => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 16
-          case ClickedKomaState.Ryu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 18
-          case _ =>
-        }
-      )
-      senteAmountEvaluationPoint
-    }
-
-    def goteAmountEvaluation: Int = {
-      var goteAmountEvaluationPoint: Int = 0
-      goteKomaKind.foreach(komaKind =>
-        komaKind match {
-          case ClickedKomaState.Fu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 1
-          case ClickedKomaState.Kyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 3
-          case ClickedKomaState.Kei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 4
-          case ClickedKomaState.Gin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 5
-          case ClickedKomaState.Kin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 6
-          case ClickedKomaState.Kaku => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 10
-          case ClickedKomaState.Hisha => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 12
-          case ClickedKomaState.To => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 9
-          case ClickedKomaState.NariKyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
-          case ClickedKomaState.NariKei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
-          case ClickedKomaState.NariGin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 7
-          case ClickedKomaState.Uma => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 16
-          case ClickedKomaState.Ryu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 18
-          case _ =>
-        }
-      )
-      goteAmountEvaluationPoint
-    }
-
-    //駒得8, 王様との距離2ぐらいを想定
-    def senteEvaluation = 20 * senteAmountEvaluation + senteOuDistanceEvaluation
-    def goteEvaluation = 20 * goteAmountEvaluation + goteOuDistanceEvaluation
-    def evaluationValue: Int = (senteEvaluation - goteEvaluation).toInt
-    evaluationValue
+    goteKomaPoint
   }
+
+  /** 王との距離の評価値 */
+  def senteOuDistanceEvaluation: Double = {
+    var senteDistanceEvaluationPoint: Double = 0
+    val (senteOuRow, senteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, true)), column(findKomaKind(ClickedKomaState.Ou, true)))
+
+    //先手の駒と先手の王の距離
+    for (i <- 0 to senteKomaPoint.length - 1) {
+      if (senteKomaIndex(i) < 80) {
+        //盤上の場合
+        val nowRow: Int = row(senteKomaIndex(i))
+        val nowColumn: Int = column(senteKomaIndex(i))
+        val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + (16 - distanceToOu) * senteKomaPoint(i) //評価点 = (距離) * (駒の価値)
+      } else {
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + 12 * senteKomaPoint(i) //持ち駒の場合
+      }
+    }
+    //後手の駒と先手の王の距離
+    for (i <- 0 to goteKomaPoint.length - 1) {
+      if (goteKomaIndex(i) < 80) { //盤上の場合
+      val nowRow: Int = row(goteKomaIndex(i))
+        val nowColumn: Int = column(goteKomaIndex(i))
+        val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
+        senteDistanceEvaluationPoint = (senteDistanceEvaluationPoint - (16 - distanceToOu) * goteKomaPoint(i)).toInt
+      } else {
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * senteKomaPoint(i)
+      }
+    }
+    senteDistanceEvaluationPoint
+  }
+
+  def goteOuDistanceEvaluation: Double = {
+    var goteDistanceEvaluationPoint: Double = 0
+    val (goteOuRow, goteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, false)), column(findKomaKind(ClickedKomaState.Ou, false)))
+
+    //後手の駒と後手の王の距離
+    for (i <- 0 to goteKomaPoint.length - 1) {
+      if (goteKomaIndex(i) < 80) { //盤上の場合
+      val nowRow: Int = row(goteKomaIndex(i))
+        val nowColumn: Int = column(goteKomaIndex(i))
+        val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + (16 - distanceToOu) * goteKomaPoint(i) //評価点 = (距離) * (駒の価値)
+      } else {
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + 12 * goteKomaPoint(i) //持ち駒の場合
+      }
+    }
+    //先手の駒と後手の王の距離
+    for (i <- 0 to senteKomaPoint.length - 1) {
+      if (senteKomaIndex(i) < 80) {
+        val nowRow: Int = row(senteKomaIndex(i))
+        val nowColumn: Int = column(senteKomaIndex(i))
+        val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
+        goteDistanceEvaluationPoint =  goteDistanceEvaluationPoint - (16 - distanceToOu) * senteKomaPoint(i)
+      } else {
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * goteKomaPoint(i)
+      }
+    }
+    goteDistanceEvaluationPoint
+  }
+
+  /** 駒得の評価値 */
+  def senteAmountEvaluation: Int = {
+    var senteAmountEvaluationPoint: Int = 0
+    senteKomaKind.foreach(komaKind =>
+      komaKind match {
+        case ClickedKomaState.Fu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 1
+        case ClickedKomaState.Kyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 3
+        case ClickedKomaState.Kei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 4
+        case ClickedKomaState.Gin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 5
+        case ClickedKomaState.Kin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 6
+        case ClickedKomaState.Kaku => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 10
+        case ClickedKomaState.Hisha => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 12
+        case ClickedKomaState.To => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 9
+        case ClickedKomaState.NariKyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
+        case ClickedKomaState.NariKei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
+        case ClickedKomaState.NariGin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 7
+        case ClickedKomaState.Uma => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 16
+        case ClickedKomaState.Ryu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 18
+        case _ =>
+      }
+    )
+    senteAmountEvaluationPoint
+  }
+
+  def goteAmountEvaluation: Int = {
+    var goteAmountEvaluationPoint: Int = 0
+    goteKomaKind.foreach(komaKind =>
+      komaKind match {
+        case ClickedKomaState.Fu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 1
+        case ClickedKomaState.Kyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 3
+        case ClickedKomaState.Kei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 4
+        case ClickedKomaState.Gin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 5
+        case ClickedKomaState.Kin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 6
+        case ClickedKomaState.Kaku => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 10
+        case ClickedKomaState.Hisha => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 12
+        case ClickedKomaState.To => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 9
+        case ClickedKomaState.NariKyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
+        case ClickedKomaState.NariKei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
+        case ClickedKomaState.NariGin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 7
+        case ClickedKomaState.Uma => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 16
+        case ClickedKomaState.Ryu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 18
+        case _ =>
+      }
+    )
+    goteAmountEvaluationPoint
+  }
+
+  //駒得8, 王様との距離2ぐらいを想定
+  def senteEvaluation = 20 * senteAmountEvaluation + senteOuDistanceEvaluation
+  def goteEvaluation = 20 * goteAmountEvaluation + goteOuDistanceEvaluation
+  def evaluationFunction: Int = (senteEvaluation - goteEvaluation).toInt
 
 }
