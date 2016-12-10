@@ -14,7 +14,7 @@ import scalafx.scene.{Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
-  val initalKomas: List[Koma] = testBoard2 match { case Board(komas) => komas }
+  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
   val initalLength: Int = initalKomas.length
   val displayKoma: Boolean = true
 
@@ -26,6 +26,7 @@ object ShogiBoard extends JFXApp {
 
   /** 棋譜の出力 */
   var kifu: List[String] = List("まで","手で","勝ち")
+  var evaluationLog: List[Int] = Nil
   val LOG_FILE_PATH = "kifu.txt" //ログ出力先
 
   def logOutPut {
@@ -69,8 +70,9 @@ object ShogiBoard extends JFXApp {
     val out = new PrintWriter(new FileWriter(LOG_FILE_PATH, true))
     var kaigyoCount = 0
 
+    //棋譜の出力
     outPutKifu.foreach(itte => {
-      out.print(itte+" ")
+      out.print(itte + " ")
 
       kaigyoCount = kaigyoCount + 1
       if (kaigyoCount >= 24) { //24手に到達したら、改行してcountを0に戻す
@@ -78,8 +80,13 @@ object ShogiBoard extends JFXApp {
         kaigyoCount = 0
       }
     })
-    out.println("")
+
+    //評価関数の出力
     if (kaigyoCount != 0) out.println("")
+    evaluationLog.reverse.foreach(i => out.print(i + " "))
+    out.println("")
+
+    out.println("")
     out.close
     kaigyoCount = 0
   }
@@ -112,6 +119,13 @@ object ShogiBoard extends JFXApp {
     case object No extends ClickedKomaState("の")
     case object Ka extends ClickedKomaState("勝")
     case object Chi extends ClickedKomaState("ち")
+    case object Yuu extends ClickedKomaState("有")
+    case object Yuri extends ClickedKomaState("利")
+    case object YuSeiYu extends ClickedKomaState("優")
+    case object Sei extends ClickedKomaState("勢")
+    case object GoKakuGo extends ClickedKomaState("互")
+    case object GoKaKuKaKu extends ClickedKomaState("角")
+
 
     case object Not extends ClickedKomaState("不")
     case object Na extends ClickedKomaState("成")
@@ -184,6 +198,31 @@ object ShogiBoard extends JFXApp {
       val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 117, isSenteTurnState, displayKoma) :: onBoardKomas)
       addBoard
     } else Board(onBoardKomas)
+
+    /** 局面評価の表示 */
+    val isTaikyoku = kifu.length > 3
+    val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
+    println("Value", board.evaluationFunction)
+
+    board = if (isTaikyoku && !ryoPushed) {
+      if (board.evaluationFunction >= 600) { //先手優勢
+        Board(Koma(ClickedKomaState.Sen, 81, true, displayKoma) :: Koma(ClickedKomaState.Te, 87, true, displayKoma) ::
+          Koma(ClickedKomaState.YuSeiYu, 93, true, displayKoma) :: Koma(ClickedKomaState.Sei, 99, true, displayKoma) :: evaluationKomas)
+      } else if (board.evaluationFunction >= 300) { //先手有利
+        Board(Koma(ClickedKomaState.Sen, 81, true, displayKoma) :: Koma(ClickedKomaState.Te, 87, true, displayKoma) ::
+          Koma(ClickedKomaState.Yuri, 93, true, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, true, displayKoma) :: evaluationKomas)
+      } else if (board.evaluationFunction <= -600) { //後手優勢
+        Board(Koma(ClickedKomaState.Go, 81, false, displayKoma) :: Koma(ClickedKomaState.Te, 87, false, displayKoma) ::
+          Koma(ClickedKomaState.YuSeiYu, 93, false, displayKoma) :: Koma(ClickedKomaState.Sei, 99, false, displayKoma) :: evaluationKomas)
+      } else if (board.evaluationFunction <= -300) { //後手有利
+        Board(Koma(ClickedKomaState.Go, 81, false, displayKoma) :: Koma(ClickedKomaState.Te, 87, false, displayKoma) ::
+          Koma(ClickedKomaState.Yuri, 93, false, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, false, displayKoma) :: evaluationKomas)
+      }
+      else { //互角
+        Board(Koma(ClickedKomaState.GoKakuGo, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 93, isSenteTurnState, displayKoma)
+          :: evaluationKomas)
+      }
+    } else Board(evaluationKomas)
 
     /** ABCDボタン更新 */
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
@@ -745,7 +784,7 @@ object ShogiBoard extends JFXApp {
       }
       //デバッグ用
       println(ouEscapePattern, TyuaiPattern, getBackWithoutOuPattern, enemyOuTakeKomaStock.isEmpty, enemyOuTakeKomaStock.nonEmpty)
-      println("enemyOuTakeKomaStock", enemyOuTakeKomaStock, "ouTookKomaStock", ouTookKomaStock)
+      //println("enemyOuTakeKomaStock", enemyOuTakeKomaStock, "ouTookKomaStock", ouTookKomaStock)
       //println("enemy",enemyOuIndex,"own",ownOuIndex)
 
       isCheckmateCheckLogic()
@@ -872,6 +911,7 @@ object ShogiBoard extends JFXApp {
       val tate = (clickedIndex / 9 + 1).toString
       val yoko = (9 - (clickedIndex % 9)).toString
       kifu = yoko :: tate :: movedKoma :: kifu
+      if (!isCanNari) evaluationLog = board.evaluationFunction :: evaluationLog
 
       if (optOnBoardKomaState.contains(false)){
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
@@ -1018,7 +1058,9 @@ object ShogiBoard extends JFXApp {
       fromToBoradAddState(koma)
       if (canMove(koma)) {
         takeKomaAndplayAndInitialize
-        if (!isCanNari) tumiCheckFlow
+        if (!isCanNari) {
+          tumiCheckFlow
+        }
       }
       else clickCancel
     }
@@ -1049,11 +1091,14 @@ object ShogiBoard extends JFXApp {
         }
         pastBoard = board //待ったはなし
         kifu = List("まで","手で","勝ち")
+        evaluationLog = Nil
         isSenteTurnState = true
       }
       else if (waitBranch) {
         board = pastBoard
-        kifu = kifu.drop(3) //待ったをした場合を取り除く
+        //待ったをした場合を取り除く
+        kifu = kifu.drop(3)
+        evaluationLog = evaluationLog.drop(1)
         if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
       firstClickFlag = false
@@ -1075,6 +1120,7 @@ object ShogiBoard extends JFXApp {
         case a :: b :: c :: past => a :: b :: c+"成り" :: past
         case _ => List("")
       }
+      evaluationLog = board.evaluationFunction :: evaluationLog
       initializeNariGomaState //状態を元に戻す
       tumiCheckFlow //成りの状態を加えたらチェック
     }
@@ -1084,6 +1130,7 @@ object ShogiBoard extends JFXApp {
         case a :: b :: c :: past => a :: b :: c+"不成" :: past
         case _ => List("")
       }
+      evaluationLog = board.evaluationFunction :: evaluationLog
       initializeNariGomaState //状態を元に戻す
       tumiCheckFlow //不成の状態を加えたらチェック
     }
