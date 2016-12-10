@@ -201,18 +201,18 @@ object ShogiBoard extends JFXApp {
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
 
     board = if (isTaikyoku && !ryoPushed) {
-      if (board.evaluationFunction >= 600) { //先手優勢
+      if (board.evaluationFunction >= 400) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 81, true, displayKoma) :: Koma(ClickedKomaState.Te, 87, true, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 93, true, displayKoma) :: Koma(ClickedKomaState.Sei, 99, true, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction >= 300) { //先手有利
+      } else if (board.evaluationFunction >= 200) { //先手有利
         Board(Koma(ClickedKomaState.Sen, 81, true, displayKoma) :: Koma(ClickedKomaState.Te, 87, true, displayKoma) ::
-          Koma(ClickedKomaState.Yuri, 93, true, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, true, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -600) { //後手優勢
+          Koma(ClickedKomaState.Yuu, 93, true, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, true, displayKoma) :: evaluationKomas)
+      } else if (board.evaluationFunction <= -400) { //後手優勢
         Board(Koma(ClickedKomaState.Go, 81, false, displayKoma) :: Koma(ClickedKomaState.Te, 87, false, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 93, false, displayKoma) :: Koma(ClickedKomaState.Sei, 99, false, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -300) { //後手有利
+      } else if (board.evaluationFunction <= -200) { //後手有利
         Board(Koma(ClickedKomaState.Go, 81, false, displayKoma) :: Koma(ClickedKomaState.Te, 87, false, displayKoma) ::
-          Koma(ClickedKomaState.Yuri, 93, false, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, false, displayKoma) :: evaluationKomas)
+          Koma(ClickedKomaState.Yuu, 93, false, displayKoma) :: Koma(ClickedKomaState.Yuri, 99, false, displayKoma) :: evaluationKomas)
       }
       else { //互角
         Board(Koma(ClickedKomaState.GoKakuGo, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 93, isSenteTurnState, displayKoma)
@@ -919,6 +919,7 @@ object ShogiBoard extends JFXApp {
       clickedKomaKind = ClickedKomaState.None
       optIsSenteKomaState = None
       optOnBoardKomaState = None
+      touPushed = false
       //王を取ろうとしていた駒の情報も初期化
       enemyOuTakeKomaStock = Nil
       ouTookKomaStock = Nil

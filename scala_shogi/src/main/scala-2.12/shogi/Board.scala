@@ -426,7 +426,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
         senteDistanceEvaluationPoint = (senteDistanceEvaluationPoint - (16 - distanceToOu) * goteKomaPoint(i)).toInt
       } else {
-        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * senteKomaPoint(i)
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * goteKomaPoint(i)
       }
     }
     senteDistanceEvaluationPoint
@@ -455,7 +455,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
         goteDistanceEvaluationPoint =  goteDistanceEvaluationPoint - (16 - distanceToOu) * senteKomaPoint(i)
       } else {
-        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * goteKomaPoint(i)
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * senteKomaPoint(i)
       }
     }
     goteDistanceEvaluationPoint
@@ -508,9 +508,9 @@ case class Board(komas: List[Koma]) {
     goteAmountEvaluationPoint
   }
 
-  //駒得8, 王様との距離2ぐらいを想定
-  def senteEvaluation = 20 * senteAmountEvaluation + senteOuDistanceEvaluation
-  def goteEvaluation = 20 * goteAmountEvaluation + goteOuDistanceEvaluation
+  //駒得2, 王様との距離1ぐらいを想定
+  def senteEvaluation = 12 * senteAmountEvaluation + senteOuDistanceEvaluation
+  def goteEvaluation = 12 * goteAmountEvaluation + goteOuDistanceEvaluation
   def evaluationFunction: Int = (senteEvaluation - goteEvaluation).toInt
 
 }
