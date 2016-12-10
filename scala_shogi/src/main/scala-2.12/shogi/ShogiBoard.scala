@@ -30,16 +30,18 @@ object ShogiBoard extends JFXApp {
   val LOG_FILE_PATH = "kifu.txt" //ログ出力先
 
   def logOutPut {
+
+    val tesu = ((kifu.length + 1) - 3) / 4
     val winPlayer: String = (isOuCatch, isCheckmate, ryoPushed) match {
       case (Some(true), _, _) => { //勝ちの場合
-        (kifu.length + 1) % 2 match {
+        tesu % 2 match {
           case 1 => "後手"
           case 0 => "先手"
           case _ => "??"
         }
       }
       case _ => { //詰み、投了の場合
-        (kifu.length + 1) % 2 match {
+        tesu % 2 match {
           case 1 => "先手"
           case 0 => "後手"
           case _ => "??"
@@ -47,23 +49,22 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    val tesu = ((kifu.length + 1)/3 - 1).toString
     var outPutKifu: List[String] = kifu.takeRight(3)
     outPutKifu = outPutKifu match {
-      case List(a,b,c) => List(a + tesu + b + winPlayer + c)
+      case List(a,b,c) => List(a + tesu.toString + b + winPlayer + c)
       case  _ => List("")
     }
 
     kifu = kifu.dropRight(3)
-    while(kifu.length >= 3) {
-      val itteList = kifu.take(3)
+    while(kifu.length >= 4) {
+      val itteList = kifu.take(4)
       val itte: String = itteList match {
-        case List(yoko:String, tate:String, koma:String) => yoko + tate + koma
+        case List(yoko: String, tate: String, koma: String, evaluate: String) => yoko + tate + koma + evaluate
         case _ => ""
       }
 
       outPutKifu = itte :: outPutKifu
-      kifu = kifu.drop(3)
+      kifu = kifu.drop(4)
     }
 
     val in = new File(LOG_FILE_PATH)
@@ -75,17 +76,13 @@ object ShogiBoard extends JFXApp {
       out.print(itte + " ")
 
       kaigyoCount = kaigyoCount + 1
-      if (kaigyoCount >= 24) { //24手に到達したら、改行してcountを0に戻す
+      if (kaigyoCount >= 10) { //10手に到達したら、改行してcountを0に戻す
         out.println("")
         kaigyoCount = 0
       }
     })
 
-    //評価関数の出力
     if (kaigyoCount != 0) out.println("")
-    evaluationLog.reverse.foreach(i => out.print(i + " "))
-    out.println("")
-
     out.println("")
     out.close
     kaigyoCount = 0
@@ -189,18 +186,18 @@ object ShogiBoard extends JFXApp {
   var (touPushed, ryoPushed) = (false, false)
 
   def boardSwitch :Board = {
-
-    /** 待ったのボタン更新 */
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initalLength) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initalLength) }
+    val isInitial = kifu.length <= 3
+    val isTaikyoku = kifu.length > 3
 
-    board = if (onBoardKomas != pastKomas && !ryoPushed) {
+    /** 待ったのボタン更新 */
+    board = if (onBoardKomas != pastKomas && !ryoPushed && isTaikyoku) {
       val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 117, isSenteTurnState, displayKoma) :: onBoardKomas)
       addBoard
     } else Board(onBoardKomas)
 
     /** 局面評価の表示 */
-    val isTaikyoku = kifu.length > 3
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
 
     board = if (isTaikyoku && !ryoPushed) {
@@ -225,7 +222,6 @@ object ShogiBoard extends JFXApp {
 
     /** ABCDボタン更新 */
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
-    val isInitial = kifu.length <= 3
 
     board = if (isInitial || ryoPushed) {
       Board(Koma(ClickedKomaState.A, 81, true, displayKoma) :: Koma(ClickedKomaState.B, 87, true, displayKoma) ::
@@ -906,11 +902,13 @@ object ShogiBoard extends JFXApp {
         else if (utu) board.findPlaceKomaKind(clickedIndex).name + "打"
         else board.findPlaceKomaKind(clickedIndex).name
       }
+      println("evaluationFunction",board.evaluationFunction)
+      println("sente",board.senteEvaluation,"gote",board.goteEvaluation)
+      println("senteDistance",board.senteOuDistanceEvaluation,"goteDistance",board.senteOuDistanceEvaluation)
 
       val tate = (clickedIndex / 9 + 1).toString
       val yoko = (9 - (clickedIndex % 9)).toString
-      kifu = yoko :: tate :: movedKoma :: kifu
-      if (!isCanNari) evaluationLog = board.evaluationFunction :: evaluationLog
+      kifu = yoko :: tate :: movedKoma :: "("+board.evaluationFunction.toString+")" :: kifu
 
       if (optOnBoardKomaState.contains(false)){
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
@@ -1090,14 +1088,11 @@ object ShogiBoard extends JFXApp {
         }
         pastBoard = board //待ったはなし
         kifu = List("まで","手で","勝ち")
-        evaluationLog = Nil
         isSenteTurnState = true
       }
       else if (waitBranch) {
         board = pastBoard
-        //待ったをした場合を取り除く
-        kifu = kifu.drop(3)
-        evaluationLog = evaluationLog.drop(1)
+        kifu = kifu.drop(4) //待ったをした場合を取り除く
         if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
       firstClickFlag = false
@@ -1116,20 +1111,18 @@ object ShogiBoard extends JFXApp {
     def nariChoiceFlow = {
       board = board.nariKoma(stockNariIndex.getOrElse(-1))
       kifu = kifu match { //kifuListの3番目に不成を追加
-        case a :: b :: c :: past => a :: b :: c+"成り" :: past
+        case a :: b :: c :: d :: past => a :: b :: c+"成り" :: d :: past
         case _ => List("")
       }
-      evaluationLog = board.evaluationFunction :: evaluationLog
       initializeNariGomaState //状態を元に戻す
       tumiCheckFlow //成りの状態を加えたらチェック
     }
 
     def fuNariChoiceFlow = {
       kifu = kifu match { //kifuListの3番目に不成を追加
-        case a :: b :: c :: past => a :: b :: c+"不成" :: past
+        case a :: b :: c :: d :: past => a :: b :: c+"不成" :: d :: past
         case _ => List("")
       }
-      evaluationLog = board.evaluationFunction :: evaluationLog
       initializeNariGomaState //状態を元に戻す
       tumiCheckFlow //不成の状態を加えたらチェック
     }
@@ -1247,6 +1240,7 @@ object ShogiBoard extends JFXApp {
     obj
   }
 
+  //todo 斜めパターン,持ち駒ありパターンと先後同型パターンも作る?
   def allRandomBoard: Board = { //D
     def randomRow: List[Int] = scala.util.Random.shuffle((1 to 7).toList)
     var stockFu: List[Int] = List()
