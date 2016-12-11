@@ -224,8 +224,8 @@ case class Board(komas: List[Koma]) {
       !koma.onBoard || (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
   }
 
-  //同じ場所をクリックしていない
   def notOwn(now: Int, toIndex: Int): Boolean = now != toIndex
+  def isSameColumnDistance(distance: Int): Boolean = distance % 9 == 0
 
   /** 歩の動きの定義 */
   def fuCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
@@ -239,8 +239,8 @@ case class Board(komas: List[Koma]) {
   def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val moveDistance = now - toIndex
     isSenteTurnState match {
-      case true => moveDistance % 9 == 0 && moveDistance > 0
-      case false => moveDistance % 9 == 0 && moveDistance < 0
+      case true => isSameColumnDistance(moveDistance) && moveDistance > 0
+      case false => isSameColumnDistance(moveDistance) && moveDistance < 0
     }
   }
 
@@ -287,7 +287,7 @@ case class Board(komas: List[Koma]) {
 
   def upDownMove(now: Int, toIndex: Int): Boolean = {
     val absMoveDistance = Math.abs(now - toIndex)
-    absMoveDistance % 9 == 0
+    isSameColumnDistance(absMoveDistance)
   }
 
   def ryuMove(now: Int, toIndex: Int): Boolean = {
