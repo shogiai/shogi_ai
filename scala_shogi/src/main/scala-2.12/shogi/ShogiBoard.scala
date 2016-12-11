@@ -1350,6 +1350,7 @@ object ShogiBoard extends JFXApp {
       Koma(ClickedKomaState.Fu, 65, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 73, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 72, senteSideKoma, onBoardStartKoma)
     ))
   }
+
   def halfRandomBoard: Board = { //D
   val (senteZone, goteZone) = ((45 to 80).toList, (0 to 35).toList)
     val r = new Random
@@ -1382,6 +1383,7 @@ object ShogiBoard extends JFXApp {
       Koma(ClickedKomaState.Fu, senteFuPlace(6), senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, senteFuPlace(7), senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, senteFuPlace(8), senteSideKoma, onBoardStartKoma)
     ))
   }
+
   def fourUnderFuInitalBoard: Board = { //C
   val (senteZone, goteZone) = ((54 to 80).toList, (0 to 26).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
@@ -1404,6 +1406,7 @@ object ShogiBoard extends JFXApp {
       Koma(ClickedKomaState.Fu, 47, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 46, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 45, senteSideKoma, onBoardStartKoma)
     ))
   }
+
   def threeUnderFuInitalBoard: Board = { //B
   val (senteZone, goteZone) = ((63 to 80).toList, (0 to 17).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
@@ -1426,6 +1429,7 @@ object ShogiBoard extends JFXApp {
       Koma(ClickedKomaState.Fu, 56, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 55, senteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 54, senteSideKoma, onBoardStartKoma)
     ))
   }
+
   def initalBoard: Board = Board(List( //A
     Koma(ClickedKomaState.Fu, 18, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 19, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 20, goteSideKoma, onBoardStartKoma),
     Koma(ClickedKomaState.Fu, 21, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 22, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 23, goteSideKoma, onBoardStartKoma),
