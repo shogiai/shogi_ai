@@ -788,8 +788,6 @@ object ShogiBoard extends JFXApp {
           case _ => ouEscapePattern && enemyOuTakeKomaStock.isEmpty
         }
       }
-
-      println(ouEscapePattern, TyuaiPattern, getBackWithoutOuPattern, enemyOuTakeKomaStock.isEmpty, enemyOuTakeKomaStock.nonEmpty)
       isCheckmateCheckLogic()
     }
 
@@ -911,9 +909,6 @@ object ShogiBoard extends JFXApp {
         else if (utu) board.findPlaceKomaKind(clickedIndex).name + "打"
         else board.findPlaceKomaKind(clickedIndex).name
       }
-      println("evaluationFunction",board.evaluationFunction)
-      println("sente",board.senteEvaluation,"gote",board.goteEvaluation)
-      println("senteDistance",board.senteOuDistanceEvaluation,"goteDistance",board.goteOuDistanceEvaluation)
 
       val tate = (clickedIndex / 9 + 1).toString
       val yoko = (9 - (clickedIndex % 9)).toString
@@ -1202,16 +1197,6 @@ object ShogiBoard extends JFXApp {
         firstClickFlag = false
         clickCancel
       }
-
-      /*デバッグ用
-      println("selectedCellIndex:" + selectedCellIndex,"clickedIndex:"+clickedIndex,"stockNariIndex:" + stockNariIndex)
-      println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
-      println("optIsSenteKoma:" + optIsSenteKoma, "optIsSenteKomaState:" + optIsSenteKomaState)
-      println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
-      println("isSenteTurnState:" + isSenteTurnState)
-      println("")
-      */
-
       boardSwitch
       isNifu = false
       repaint
