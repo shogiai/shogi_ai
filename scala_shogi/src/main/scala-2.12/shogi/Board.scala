@@ -437,7 +437,7 @@ case class Board(komas: List[Koma]) {
     val (goteOuRow, goteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, false)), column(findKomaKind(ClickedKomaState.Ou, false)))
 
     //後手の駒と後手の王の距離
-    for (i <- 0 to goteKomaPoint.length - 1) {
+    for (i <- goteKomaPoint.indices) {
       if (goteKomaIndex(i) < 80) { //盤上の場合
       val nowRow: Int = row(goteKomaIndex(i))
         val nowColumn: Int = column(goteKomaIndex(i))
@@ -448,7 +448,7 @@ case class Board(komas: List[Koma]) {
       }
     }
     //先手の駒と後手の王の距離
-    for (i <- 0 to senteKomaPoint.length - 1) {
+    for (i <- senteKomaPoint.indices) {
       if (senteKomaIndex(i) < 80) {
         val nowRow: Int = row(senteKomaIndex(i))
         val nowColumn: Int = column(senteKomaIndex(i))
