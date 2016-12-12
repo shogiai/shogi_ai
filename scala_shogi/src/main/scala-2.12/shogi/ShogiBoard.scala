@@ -855,7 +855,7 @@ object ShogiBoard extends JFXApp {
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
       optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
       optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
-    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma)
+    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma) && selectedCellIndex == 117
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
