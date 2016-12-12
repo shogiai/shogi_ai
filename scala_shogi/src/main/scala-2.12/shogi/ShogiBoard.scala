@@ -459,7 +459,6 @@ object ShogiBoard extends JFXApp {
   def cellObjGroup(komaOpt: Option[Koma], clickedIndex: Int): Group = {
 
     /** 以下、駒をクリックした時に使う関数のまとまり */
-    /* clickedIndexと一致した場合の駒情報を取得する (komaの中のClickedIndexと一致する、という条件が必要(本当は)) */
     val optClickedKomaKind: Option[ClickedKomaState] = komaOpt.map(koma => koma.kind)
     val optIsSenteKoma: Option[Boolean] = komaOpt.map(koma => koma.isSente)
     val optOnBoard: Option[Boolean] = komaOpt.map(koma => koma.onBoard)
@@ -572,6 +571,7 @@ object ShogiBoard extends JFXApp {
         }
       }
 
+      val (enemySideKoma, ownSideKoma) = (true, false)
       def canTakePlace(fromIndex: Int, toIndex: Int, isTumasuKoma: Boolean, board: Board): Boolean = {
         val isSenteKoma = isThereSenteKoma(fromIndex)
           isSenteKoma match {
@@ -592,12 +592,12 @@ object ShogiBoard extends JFXApp {
       //toIndexに王以外の駒が動けるかどうかを調べることで、相手の駒を取り返せるかどうかを調べるための関数
       def canNotGetBack(toIndex: Int): Boolean = {
         for (fromIndex <- 0 to 80) {
-          if (canTakePlace(fromIndex, toIndex, false, board)) { //詰まされる側の駒で、王を取ろうとしている駒を取れるか
+          if (canTakePlace(fromIndex, toIndex, ownSideKoma, board)) { //詰まされる側の駒で、王を取ろうとしている駒を取れるか
             //王以外の駒で取る場合、取れる駒を動かしたboard上で効きがない場合に、falseとなる
             if (!isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) {
               var afterMoveStock: List[Int] = Nil
               for (reCheckfromIndex <- 0 to 80) {
-                if (canTakePlace(reCheckfromIndex, ownOuIndex, true, board.moveKoma(fromIndex, toIndex))) {
+                if (canTakePlace(reCheckfromIndex, ownOuIndex, enemySideKoma, board.moveKoma(fromIndex, toIndex))) {
                   //詰ます側が詰まされる王の場所に効きがある(つまり取れる)駒がどこにいるのか
                   afterMoveStock = reCheckfromIndex :: afterMoveStock
                 }
@@ -608,7 +608,7 @@ object ShogiBoard extends JFXApp {
             if (isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) {
               var ouAfterMoveStock: List[Int] = Nil
               for (reCheckfromIndex <- 0 to 80) {
-                if (canTakePlace(reCheckfromIndex, toIndex, true, board.moveKoma(ownOuIndex, toIndex))) { //王はownOuIndexからtoIndexに移動
+                if (canTakePlace(reCheckfromIndex, toIndex, enemySideKoma, board.moveKoma(ownOuIndex, toIndex))) { //王はownOuIndexからtoIndexに移動
                   ouAfterMoveStock = reCheckfromIndex :: ouAfterMoveStock
                 }
               }
@@ -624,7 +624,7 @@ object ShogiBoard extends JFXApp {
       def canMoveWithoutOuTyuAi(toIndex: Int): List[Int] = {
         tyuAiFalseList = Nil
         for (fromIndex <- 0 to 80) {
-          if (canTakePlace(fromIndex, toIndex, false, board) &&
+          if (canTakePlace(fromIndex, toIndex, ownSideKoma, board) &&
             !isThereKomaKind(fromIndex).contains(ClickedKomaState.Ou)) {
             tyuAiFalseList = fromIndex :: tyuAiFalseList
           }
@@ -665,7 +665,7 @@ object ShogiBoard extends JFXApp {
           canMoveWithoutOuTyuAi(index).foreach(fromIndex => {
             var afterMoveStock: List[Int] = Nil
             for (reCheckfromIndex <- 0 to 80) {
-              if (canTakePlace(reCheckfromIndex, ownOuIndex, true, board.moveKoma(fromIndex, index))) { //詰ます側が詰まされる王の場所に効きがある(つまり取れる)駒がどこにいるのか
+              if (canTakePlace(reCheckfromIndex, ownOuIndex, enemySideKoma, board.moveKoma(fromIndex, index))) { //詰ます側が詰まされる王の場所に効きがある(つまり取れる)駒がどこにいるのか
                 afterMoveStock = reCheckfromIndex :: afterMoveStock
               }
             }
@@ -690,7 +690,6 @@ object ShogiBoard extends JFXApp {
 
       /** 詰み、勝ちの条件判定 */
       //王の場所に効きがある(つまり取れる)駒がどこにいるのかをStockしている
-      val (enemySideKoma, ownSideKoma) = (true, false)
       for (fromIndex <- 0 to 80) {
         //詰ます側が詰まされる王の場所に効きがある(つまり取れる)駒がどこにいるのか
         if (canTakePlace(fromIndex, ownOuIndex, enemySideKoma, board)) {
