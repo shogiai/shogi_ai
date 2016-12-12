@@ -77,18 +77,21 @@ object ShogiBoard extends JFXApp {
     var kaigyoCount = 0
 
     //棋譜の出力
-    outPutKifu.foreach(itte => {
-      out.print(itte + " ")
+    if (outPutKifu.length >= 2) { //0手で勝利した場合は出力しない
+      outPutKifu.foreach(itte => {
+        out.print(itte + " ")
 
-      kaigyoCount = kaigyoCount + 1
-      if (kaigyoCount >= 10) { //10手に到達したら、改行してcountを0に戻す
-        out.println("")
-        kaigyoCount = 0
-      }
-    })
+        kaigyoCount = kaigyoCount + 1
+        if (kaigyoCount >= 10) { //10手に到達したら、改行してcountを0に戻す
+          out.println("")
+          kaigyoCount = 0
+        }
+      })
 
-    if (kaigyoCount != 0) out.println("")
-    out.println("")
+      if (kaigyoCount != 0) out.println("")
+      out.println("")
+    }
+
     out.close
     kaigyoCount = 0
   }
@@ -1220,13 +1223,20 @@ object ShogiBoard extends JFXApp {
       if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
       if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
         || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
-        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) label.setFont(Font(15))
-      else label.setFont(Font(30))
-      label.setMaxSize(30, 30)
-
-      label.setLayoutX(25)
-      if (koma.isSente) label.setLayoutY(25)
-      else label.setLayoutY(20)
+        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
+        label.setFont(Font(20))
+        label.setMaxSize(40, 40)
+        label.setLayoutX(20)
+        if (koma.isSente) label.setLayoutY(30)
+        else label.setLayoutY(25)
+      }
+      else {
+        label.setFont(Font(30))
+        label.setMaxSize(30, 30)
+        label.setLayoutX(25)
+        if (koma.isSente) label.setLayoutY(25)
+        else label.setLayoutY(20)
+      }
 
       label.setAlignment(Pos.Center)
       label
