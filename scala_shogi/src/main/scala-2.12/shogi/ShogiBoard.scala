@@ -17,8 +17,8 @@ object ShogiBoard extends JFXApp {
   val (senteSideKoma, goteSideKoma) = (true, false)
   val (onBoardStartKoma, handStartKoma) = (true, false)
 
-  val initalKomas: List[Koma] = initalBoard match { case Board(komas) => komas }
-  val initalLength: Int = initalKomas.length
+  val initialKomas: List[Koma] = initialBoard match { case Board(komas) => komas }
+  val initialLength: Int = initialKomas.length
   val displayKoma: Boolean = true
   val (displaySenteKoma: Boolean, displayGoteKoma: Boolean) = (true, false)
 
@@ -26,7 +26,7 @@ object ShogiBoard extends JFXApp {
     Koma(ClickedKomaState.A, 81, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.B, 87, displaySenteKoma, displayKoma) ::
       Koma(ClickedKomaState.C, 93, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.D, 99, displaySenteKoma, displayKoma) :: //初期化
       Koma(ClickedKomaState.E, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.F, 117, displaySenteKoma, displayKoma) ::
-      Koma(ClickedKomaState.G, 123, displaySenteKoma, displayKoma):: initalKomas)
+      Koma(ClickedKomaState.G, 123, displaySenteKoma, displayKoma):: initialKomas)
   var pastBoard: Board = board
 
   /** 棋譜の出力 */
@@ -194,8 +194,8 @@ object ShogiBoard extends JFXApp {
   var (touPushed, ryoPushed) = (false, false)
 
   def boardSwitch :Board = {
-    val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initalLength) }
-    val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initalLength) }
+    val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initialLength) }
+    val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initialLength) }
     val isInitial = kifu.length <= 3
     val isTaikyoku = kifu.length > 3
 
@@ -1083,12 +1083,12 @@ object ShogiBoard extends JFXApp {
     def initializationOrWaitFlow = {
       if (initializationBranch) {
         board = optClickedKomaKind match { //初期化時の駒配置の選択が可能
-          case Some(ClickedKomaState.A) => initalBoard
-          case Some(ClickedKomaState.B) => threeUnderFuInitalBoard
-          case Some(ClickedKomaState.C) => fourUnderFuInitalBoard
+          case Some(ClickedKomaState.A) => initialBoard
+          case Some(ClickedKomaState.B) => threeUnderFuInitialBoard
+          case Some(ClickedKomaState.C) => fourUnderFuInitialBoard
           case Some(ClickedKomaState.D) => halfRandomBoard
-          case Some(ClickedKomaState.E) => slashUnderFuInitalBoard
-          case Some(ClickedKomaState.F) => slashhalfRandomBoard
+          case Some(ClickedKomaState.E) => slashUnderFuInitialBoard
+          case Some(ClickedKomaState.F) => slashHalfRandomBoard
           case Some(ClickedKomaState.G) => allRandomBoard
           case _ => board
         }
@@ -1278,7 +1278,7 @@ object ShogiBoard extends JFXApp {
     ))
   }
 
-  def slashhalfRandomBoard: Board = { //F
+  def slashHalfRandomBoard: Board = { //F
     val senteZone = List(35,34,33, 44,43,42,41, 53,52,51,50,49, 62,61,60,59,58,57, 71,70,69,68,67,66,65, 72,73)
     val goteZone = List(45,46,47, 36,37,38,39, 27,28,29,30,31, 18,19,20,21,22,23, 9,10,11,12,13,14,15, 7,8)
     val r = new Random
@@ -1312,7 +1312,7 @@ object ShogiBoard extends JFXApp {
     ))
   }
 
-  def slashUnderFuInitalBoard: Board = { //E
+  def slashUnderFuInitialBoard: Board = { //E
     val senteZone = List(35,34, 44,43,42, 53,52,51,50, 62,61,60,59,58, 71,70,69,68,67,66)
     val goteZone = List(45,46, 36,37,38, 27,28,29,30, 18,19,20,21,22, 9,10,11,12,13,14)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
@@ -1369,7 +1369,7 @@ object ShogiBoard extends JFXApp {
     ))
   }
 
-  def fourUnderFuInitalBoard: Board = { //C
+  def fourUnderFuInitialBoard: Board = { //C
   val (senteZone, goteZone) = ((54 to 80).toList, (0 to 26).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
     Board(List( //歩が4段目、その下でランダムな初期の駒配置
@@ -1392,7 +1392,7 @@ object ShogiBoard extends JFXApp {
     ))
   }
 
-  def threeUnderFuInitalBoard: Board = { //B
+  def threeUnderFuInitialBoard: Board = { //B
   val (senteZone, goteZone) = ((63 to 80).toList, (0 to 17).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
     Board(List( //歩の下でランダムな初期の駒配置
@@ -1415,7 +1415,7 @@ object ShogiBoard extends JFXApp {
     ))
   }
 
-  def initalBoard: Board = Board(List( //A
+  def initialBoard: Board = Board(List( //A
     Koma(ClickedKomaState.Fu, 18, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 19, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 20, goteSideKoma, onBoardStartKoma),
     Koma(ClickedKomaState.Fu, 21, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 22, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 23, goteSideKoma, onBoardStartKoma),
     Koma(ClickedKomaState.Fu, 24, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 25, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 26, goteSideKoma, onBoardStartKoma),
