@@ -913,7 +913,7 @@ object ShogiBoard extends JFXApp {
       val yoko = (9 - (clickedIndex % 9)).toString
       kifu = yoko :: tate :: movedKoma :: "("+board.evaluationFunction.toString+")" :: kifu
 
-      if (optOnBoardKomaState.contains(false)){
+      if (optOnBoardKomaState.contains(false)) {
         board = board.spaceChangeKoma(clickedIndex, optOnBoard.contains(false)) //打ち終わった駒は盤上の駒になる
       }
 
@@ -1392,7 +1392,7 @@ object ShogiBoard extends JFXApp {
   }
 
   def threeUnderFuInitialBoard: Board = { //B
-  val (senteZone, goteZone) = ((63 to 80).toList, (0 to 17).toList)
+    val (senteZone, goteZone) = ((63 to 80).toList, (0 to 17).toList)
     val (senteKomaPlace: List[Int], goteKomaPlace: List[Int]) = (scala.util.Random.shuffle(senteZone), scala.util.Random.shuffle(goteZone))
     Board(List( //歩の下でランダムな初期の駒配置
       Koma(ClickedKomaState.Fu, 18, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 19, goteSideKoma, onBoardStartKoma), Koma(ClickedKomaState.Fu, 20, goteSideKoma, onBoardStartKoma),
