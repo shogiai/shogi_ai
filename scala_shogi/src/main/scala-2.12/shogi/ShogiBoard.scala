@@ -1202,7 +1202,6 @@ object ShogiBoard extends JFXApp {
         firstClickFlag = false
         clickCancel
       }
-
       boardSwitch
       isNifu = false
       repaint
