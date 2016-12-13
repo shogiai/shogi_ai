@@ -1146,7 +1146,6 @@ object ShogiBoard extends JFXApp {
       touPushed = true
       clickCancel
     }
-    val aaa = true
     /** ここまで駒をクリックした時に使われる関数群 */
 
     /** 実際に駒がクリックがされた場合の処理 */
