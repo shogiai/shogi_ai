@@ -852,7 +852,7 @@ object ShogiBoard extends JFXApp {
     def funariChoiceBranch: Boolean = {
       (optClickedKomaKind.contains(ClickedKomaState.Na) && selectedCellIndex == 110) || (optClickedKomaKind.contains(ClickedKomaState.Not) && selectedCellIndex == 109)
     }
-    def touRyoBranch: Boolean = (optClickedKomaKind.contains(ClickedKomaState.Tou) || optClickedKomaKind.contains(ClickedKomaState.Ryo)) && selectedCellIndex == 111
+    def touRyoBranch: Boolean = (optClickedKomaKind.contains(ClickedKomaState.Tou) || optClickedKomaKind.contains(ClickedKomaState.Ryo))
 
     /** 初期化, 待った */
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
@@ -868,9 +868,11 @@ object ShogiBoard extends JFXApp {
     }
     def fromToBoradAddState(koma: ClickedKomaState) = {
       if (optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) addState
+      touPushed = false
     }
     def fromHandToBoradAddState = {
       if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
+      touPushed = false
     }
 
     var firstClickFlag: Boolean = false
@@ -1142,6 +1144,7 @@ object ShogiBoard extends JFXApp {
         logOutPut
       }
       touPushed = true
+      selectedCellIndex = -100
     }
     /** ここまで駒をクリックした時に使われる関数群 */
 
@@ -1199,6 +1202,7 @@ object ShogiBoard extends JFXApp {
         firstClickFlag = false
         clickCancel
       }
+
       boardSwitch
       isNifu = false
       repaint
