@@ -1203,6 +1203,16 @@ object ShogiBoard extends JFXApp {
         firstClickFlag = false
         clickCancel
       }
+
+      //todo クリック問題再調査
+      //デバッグ用
+      println("selectedCellIndex:" + selectedCellIndex,"clickedIndex:"+clickedIndex,"stockNariIndex:" + stockNariIndex)
+      println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
+      println("optIsSenteKoma:" + optIsSenteKoma, "optIsSenteKomaState:" + optIsSenteKomaState)
+      println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
+      println("isSenteTurnState:" + isSenteTurnState)
+      println("")
+
       boardSwitch
       isNifu = false
       repaint
