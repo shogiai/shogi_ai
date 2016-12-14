@@ -203,8 +203,8 @@ object ShogiBoard extends JFXApp {
     val isTaikyoku = kifu.length > 3
 
     /** 待ったのボタン更新 */
-    board = if (onBoardKomas != pastKomas && !ryoPushed && isTaikyoku) {
-      val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 117, isSenteTurnState, displayKoma) :: onBoardKomas)
+    board = if (onBoardKomas != pastKomas && !ryoPushed) {
+      val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 105, isSenteTurnState, displayKoma) :: onBoardKomas)
       addBoard
     } else Board(onBoardKomas)
 
@@ -858,7 +858,7 @@ object ShogiBoard extends JFXApp {
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
       optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
       optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
-    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma) && selectedCellIndex == 117
+    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Ma) && selectedCellIndex == 105
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
