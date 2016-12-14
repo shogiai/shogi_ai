@@ -12,7 +12,6 @@ import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
 import scalafx.scene.{Group, Scene}
 
-
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
   val (senteSideKoma, goteSideKoma) = (true, false)
@@ -213,7 +212,6 @@ object ShogiBoard extends JFXApp {
 
     /** 局面評価の表示 */
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
-
     board = if (isTaikyoku && !ryoPushed) {
       if (board.evaluationFunction >= 400) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 81, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 87, displaySenteKoma, displayKoma) ::
@@ -572,7 +570,6 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-
     val (enemySideKoma, ownSideKoma) = (true, false)
     def canTakePlace(fromIndex: Int, toIndex: Int, isTumasuKoma: Boolean, board: Board): Boolean = {
       val isSenteKoma = isThereSenteKoma(fromIndex)
@@ -589,8 +586,8 @@ object ShogiBoard extends JFXApp {
 
     /** 以下、王が詰んでいるかのチェック関数 */
     def isCheckmateCheck: Boolean = {
-      val ownOuIndex: Int = board.findOuGyoku(isSenteTurnState) //自分の王の位置
-      val enemyOuIndex: Int = board.findOuGyoku(!isSenteTurnState) //敵の王の位置
+      val ownOuIndex: Int = board.filterOuGyoku(isSenteTurnState) //自分の王の位置
+      val enemyOuIndex: Int = board.filterOuGyoku(!isSenteTurnState) //敵の王の位置
 
       /** getBackWithoutOuPattern */
       //toIndexに王以外の駒が動けるかどうかを調べることで、相手の駒を取り返せるかどうかを調べるための関数
@@ -886,6 +883,191 @@ object ShogiBoard extends JFXApp {
       }
     }
 
+    /** 以下棋譜出力の方向 */
+    //上から移動してくる
+    def fromLeftUp(moveDistance: Int) = moveDistance % 10 == 0 && moveDistance > 0
+    def fromUp(moveDistance: Int) = moveDistance % 9 == 0 && moveDistance > 0
+    def fromRightUp(moveDistance: Int) = moveDistance % 8 == 0 && moveDistance > 0
+
+    //横から移動してくる
+    def fromRight(moveDistance: Int) = clickedIndex / 9 == selectedCellIndex / 9 && moveDistance > 0
+    def fromLeft(moveDistance: Int) = clickedIndex / 9 == selectedCellIndex / 9 && moveDistance < 0
+
+    //下から移動してくる
+    def fromLeftDown(moveDistance: Int) = moveDistance % 8 == 0 && moveDistance < 0
+    def fromDown(moveDistance: Int) = moveDistance % 9 == 0 && moveDistance < 0
+    def fromRightDown(moveDistance: Int) = moveDistance % 10 == 0 && moveDistance < 0
+
+    def tryDirectionPrint1(sameKomaMoveDistanceList: List[Int]): List[String] = {
+      var directionPrintList1: List[String] = Nil
+      sameKomaMoveDistanceList.foreach(sameKomaMoveDistance => {
+        val tryDirectionPrint1 = {
+          if (fromLeftUp(sameKomaMoveDistance) || fromUp(sameKomaMoveDistance) || fromRightUp(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "引"
+              case false => "上"
+            }
+          }
+          else if (fromRight(sameKomaMoveDistance) || fromLeft(sameKomaMoveDistance)) {
+            "寄"
+          }
+          else if (fromLeftDown(sameKomaMoveDistance) || fromRightDown(sameKomaMoveDistance) || fromDown(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "上"
+              case false => "引"
+            }
+          }
+          else ""
+        }
+        directionPrintList1 = tryDirectionPrint1 :: directionPrintList1
+      })
+      directionPrintList1
+    }
+    def tryDirectionPrint2(sameKomaMoveDistanceList: List[Int]): List[String] = {
+      var directionPrintList2: List[String] = Nil
+      sameKomaMoveDistanceList.foreach(sameKomaMoveDistance => {
+        val tryDirectionPrint2 = {
+          if (fromLeftUp(sameKomaMoveDistance) || fromLeftDown(sameKomaMoveDistance) || fromLeft(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "左"
+              case false => "右"
+            }
+          }
+          else if (fromUp(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "引"
+              case false => "直"
+            }
+          }
+          else if (fromDown(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "直"
+              case false => "引"
+            }
+          }
+          else if (fromRightUp(sameKomaMoveDistance) || fromRightDown(sameKomaMoveDistance) || fromRight(sameKomaMoveDistance)) {
+            isSenteTurnState match {
+              case true => "右"
+              case false => "左"
+            }
+          }
+          else ""
+        }
+        directionPrintList2 = tryDirectionPrint2 :: directionPrintList2
+      })
+      directionPrintList2
+    }
+
+    def directionPrint1(sameKomaMoveDistanceList: List[Int], moveDistance: Int): String = { //移動する駒を試す
+      if (fromLeftUp(moveDistance) || fromUp(moveDistance) || fromRightUp(moveDistance)) {
+        isSenteTurnState match {
+          case true => "引"
+          case false => "上"
+        }
+      }
+      else if (fromRight(moveDistance) || fromLeft(moveDistance)) {
+        "寄"
+      }
+      else if (fromLeftDown(moveDistance) || fromRightDown(moveDistance) || fromDown(moveDistance)) {
+        isSenteTurnState match {
+          case true => "上"
+          case false => "引"
+        }
+      }
+      else ""
+    }
+    def directionPrint2(sameKomaMoveDistanceList: List[Int], moveDistance: Int): String = {
+      if (fromLeftUp(moveDistance) || fromLeftDown(moveDistance) || fromLeft(moveDistance)) {
+        isSenteTurnState match {
+          case true => "左"
+          case false => "右"
+        }
+      }
+      else if (fromUp(moveDistance)) {
+        isSenteTurnState match {
+          case true => "引"
+          case false => "直"
+        }
+      }
+      else if (fromDown(moveDistance)) {
+        isSenteTurnState match {
+          case true => "直"
+          case false => "引"
+        }
+      }
+      else if (fromRightUp(moveDistance) || fromRightDown(moveDistance) || fromRight(moveDistance)) {
+        isSenteTurnState match {
+          case true => "右"
+          case false => "左"
+        }
+      }
+      else ""
+    }
+    def directionPrint3(sameKomaMoveDistanceList: List[Int], moveDistance: Int): String = {
+      if (fromLeftUp(moveDistance)) {
+        isSenteTurnState match {
+          case true => "左引"
+          case false => "右上"
+        }
+      }
+      else if (fromUp(moveDistance)) {
+        isSenteTurnState match {
+          case true => "引"
+          case false => "上"
+        }
+      }
+      else if (fromRightUp(moveDistance)) {
+        isSenteTurnState match {
+          case true => "右引"
+          case false => "左上"
+        }
+      }
+      else if (fromRight(moveDistance)) {
+        isSenteTurnState match {
+          case true => "右"
+          case false => "左"
+        }
+      }
+      else if (fromLeft(moveDistance)) {
+        isSenteTurnState match {
+          case true => "左"
+          case false => "右"
+        }
+      }
+      else if (fromLeftDown(moveDistance)) {
+        isSenteTurnState match {
+          case true => "左上"
+          case false => "右引"
+        }
+      }
+      else if (fromDown(moveDistance)) {
+        isSenteTurnState match {
+          case true => "上"
+          case false => "引"
+        }
+      }
+      else if (fromRightDown(moveDistance)) {
+        isSenteTurnState match {
+          case true => "右上"
+          case false => "左引"
+        }
+      }
+      else ""
+    }
+    /** ここまで棋譜出力の方向 */
+
+    def tyofukuCheck: List[ClickedKomaState] = {
+      var stockKoma: List[ClickedKomaState] = Nil
+      var stockIndex: List[Int] = Nil
+      for (fromIndex <- 0 to 80) { //詰まされる側が敵の王を取れるかどうか
+        if (canTakePlace(fromIndex, clickedIndex, ownSideKoma, board)) {
+          val koma = board.filterPlaceKomaKind(fromIndex)
+          stockKoma = koma :: stockKoma
+        }
+      }
+      val tyofukuKoma = stockKoma diff stockKoma.distinct
+      tyofukuKoma
+    }
 
     /** 実際に手を指し、今までの条件を初期化する */
     def switchTurn(nextTurn: Boolean): Boolean = if (nextTurn) false else true
@@ -896,6 +1078,39 @@ object ShogiBoard extends JFXApp {
         pastBoard = board
       }
 
+      /** 棋譜内での重複発見のための処理 */
+      //仮に効きが重複していた駒が今動いた駒と一致していた場合
+      var directionPrint: String = ""
+      if (tyofukuCheck.contains(board.filterPlaceKomaKind(selectedCellIndex))) {
+        val sameKomaIndex = board.filterKomaKind(board.filterPlaceKomaKind(selectedCellIndex), isSenteTurnState)
+        var sameKomaMoveDistanceList: List[Int] = Nil
+
+        val moveDistance = clickedIndex - selectedCellIndex
+        sameKomaIndex.foreach(index => sameKomaMoveDistanceList = (clickedIndex - index) :: sameKomaMoveDistanceList)
+
+        directionPrint = {
+          if (tryDirectionPrint1(sameKomaMoveDistanceList).count(_ == directionPrint1(sameKomaMoveDistanceList, moveDistance)) <= 1) {
+            println("moveDistance",moveDistance,"sameKomaMoveDistanceList",sameKomaMoveDistanceList)
+            println("directionPrint1",directionPrint1(sameKomaMoveDistanceList, moveDistance),"tryDirectionPrint1",tryDirectionPrint1(sameKomaMoveDistanceList))
+            println("")
+            directionPrint1(sameKomaMoveDistanceList, moveDistance)
+          }
+          else if (tryDirectionPrint2(sameKomaMoveDistanceList).count(_ == directionPrint2(sameKomaMoveDistanceList, moveDistance)) <= 1) {
+            println("moveDistance",moveDistance,"sameKomaMoveDistanceList",sameKomaMoveDistanceList)
+            println("directionPrint2",directionPrint2(sameKomaMoveDistanceList, moveDistance),"tryDirectionPrint2",tryDirectionPrint2(sameKomaMoveDistanceList))
+            println("")
+            directionPrint2(sameKomaMoveDistanceList, moveDistance)
+          }
+          else {
+            println("moveDistance",moveDistance,"sameKomaMoveDistanceList",sameKomaMoveDistanceList)
+            println("directionPrint3",directionPrint3(sameKomaMoveDistanceList, moveDistance))
+            println("")
+            directionPrint3(sameKomaMoveDistanceList, moveDistance)
+          }
+        }
+
+      }
+
       /** 成り不成の処理 */
       if (mustNari) {
         board = board.nariKoma(selectedCellIndex) //強制的に成り、相手の手番へ
@@ -904,15 +1119,16 @@ object ShogiBoard extends JFXApp {
       else if (canNari) addNariGomaState //どこにいる駒が成れる状態、という状態を付与
       else isSenteTurnState = switchTurn(isSenteTurnState) //成れない場合は相手の手番へ
 
+      /** 実際に駒を動かす処理(本体) */
       board = board.moveKoma(selectedCellIndex, clickedIndex)
 
       /** 棋譜の出力 */
       val place = clickedIndex
       val movedKoma = {
         //mustNariの場合はここで棋譜に追加、canNariの場合はボタンを選択した時に追加する方式に
-        if (mustNari) board.findPlaceKomaKind(clickedIndex).name + "成り"
-        else if (utu) board.findPlaceKomaKind(clickedIndex).name + "打"
-        else board.findPlaceKomaKind(clickedIndex).name
+        if (mustNari) board.filterPlaceKomaKind(clickedIndex).name + directionPrint + "成り"
+        else if (utu) board.filterPlaceKomaKind(clickedIndex).name + directionPrint + "打"
+        else board.filterPlaceKomaKind(clickedIndex).name + directionPrint
       }
 
       val tate = (clickedIndex / 9 + 1).toString
@@ -1088,8 +1304,8 @@ object ShogiBoard extends JFXApp {
     }
 
     def initialWinCheck() :Boolean = {
-      val ownOuIndex: Int = board.findOuGyoku(isSenteTurnState) //自分の王の位置
-      val enemyOuIndex: Int = board.findOuGyoku(!isSenteTurnState) //敵の王の位置
+      val ownOuIndex: Int = board.filterOuGyoku(isSenteTurnState) //自分の王の位置
+      val enemyOuIndex: Int = board.filterOuGyoku(!isSenteTurnState) //敵の王の位置
       var isInitialWin: Boolean = false
       for (fromIndex <- 0 to 80) { //詰まされる側が敵の王を取れるかどうか
         if (canTakePlace(fromIndex, enemyOuIndex, ownSideKoma, board)) {
