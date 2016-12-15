@@ -14,21 +14,29 @@ case class Board(komas: List[Koma]) {
   //indexを指定した時、そこにある駒を返す関数
   def findKoma(place: Int) = komas.zipWithIndex.find(_._1.index == place)
 
-  def findKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): Int = {
-    komas.filter(_.kind == komaKind).filter(_.isSente == isSenteKoma) match {
-      case List(Koma(kind, index, isSente, onBoard)) => index
+  def filterKomaKind(komaKind: ClickedKomaState, isSenteKoma: Boolean): List[Int] = {
+    komas.filter(_.isSente == isSenteKoma).filter(_.kind == komaKind).map { koma =>
+      koma match {
+      case Koma(kind, index, isSente, onBoard) => index //index
+      case _ => -1
+    }}
+  }
+
+  def filterOuGyoku(isSenteKoma: Boolean): Int = {
+    komas.filter(_.isSente == isSenteKoma).find(komas => komas.kind == ClickedKomaState.Ou || komas.kind == ClickedKomaState.Gyoku) match {
+      case Some(Koma(kind, index, isSente, onBoard)) => index
       case _ => -1
     }
   }
 
-  def findPlaceKomaKind(place: Int): ClickedKomaState = {
+  def filterPlaceKomaKind(place: Int): ClickedKomaState = {
     komas.filter(_.index == place) match {
       case List(Koma(kind, index, isSente, onBoard)) => kind
       case _ => ClickedKomaState.Blank //起こりえない
     }
   }
 
-  def findPlaceKoma(place: Int): Option[Koma] = {
+  def filterPlaceKoma(place: Int): Option[Koma] = {
     komas.filter(_.index == place) match {
       case List(koma) => Some(koma)
       case _ => None
@@ -36,7 +44,7 @@ case class Board(komas: List[Koma]) {
   }
 
   //stockNariIndex
-  def findPlaceKomaisSente(place: Int): Option[Boolean] = {
+  def filterPlaceKomaisSente(place: Int): Option[Boolean] = {
     komas.filter(_.index == place) match {
       case List(Koma(kind, index, isSente, onBoard)) => Some(isSente)
       case _ => None //起こりえない
@@ -161,7 +169,7 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) <= toRow || row(koma.index) >= nowRow || !koma.onBoard ||
-      (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //下にどれだけ動けるか
@@ -169,7 +177,7 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) != nowColumn || row(koma.index) >= toRow || row(koma.index) <= nowRow || !koma.onBoard ||
-      (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //左にどれだけ動けるか
@@ -177,15 +185,15 @@ case class Board(komas: List[Koma]) {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => row(koma.index) != nowRow || column(koma.index) <= toColumn || column(koma.index) >= nowColumn || !koma.onBoard ||
-      (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
-  //右にどれだけ動けるか, 位置を判定
+  //右にどれだけ動けるか
   def checkMateRightJumpCheck(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
     val (nowRow, nowColumn) = (row(now), column(now))
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => row(koma.index) != nowRow || column(koma.index) >= toColumn || column(koma.index) <= nowColumn || !koma.onBoard ||
-      (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //右上方向にどれだけ動けるか
@@ -194,7 +202,7 @@ case class Board(komas: List[Koma]) {
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
       (nowColumn >= column(koma.index) && row(koma.index) >= nowRow) || (toColumn <= column(koma.index) && row(koma.index) <= toRow) ||
-      !koma.onBoard || (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      !koma.onBoard || ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //左下方向にどれだけ動けるか
@@ -203,7 +211,7 @@ case class Board(komas: List[Koma]) {
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) + row(koma.index) != nowColumn + nowRow ||
       (toColumn >= column(koma.index) && row(koma.index) >= toRow) || (nowColumn <= column(koma.index) && row(koma.index) <= nowRow) ||
-      !koma.onBoard || (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      !koma.onBoard || ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //左上方向にどれだけ動けるか
@@ -212,7 +220,7 @@ case class Board(komas: List[Koma]) {
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
       (toColumn >= column(koma.index) && toRow >= row(koma.index)) || (nowColumn <= column(koma.index) && nowRow <= row(koma.index)) ||
-      !koma.onBoard || (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      !koma.onBoard || ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   //右下方向にどれだけ動けるか
@@ -221,19 +229,41 @@ case class Board(komas: List[Koma]) {
     val (toRow, toColumn) = (row(toIndex), column(toIndex))
     komas.forall(koma => column(koma.index) - row(koma.index) != nowColumn - nowRow ||
       (nowColumn >= column(koma.index) && nowRow >= row(koma.index)) || (toColumn <= column(koma.index) && toRow <= row(koma.index)) ||
-      !koma.onBoard || (koma.kind == ClickedKomaState.Ou && koma.isSente == isSenteTurnState))
+      !koma.onBoard || ((koma.kind == ClickedKomaState.Ou || koma.kind == ClickedKomaState.Gyoku) && koma.isSente == isSenteTurnState))
   }
 
   def notOwn(now: Int, toIndex: Int): Boolean = now != toIndex
   def isSameColumnDistance(distance: Int): Boolean = distance % 9 == 0
 
-  /** 歩の動きの定義 */
-  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
-    isSenteTurnState match {
-      case true => now - toIndex == 9
-      case false => now - toIndex == -9
-    }
+  val fuMoves = Seq(9)
+  val keiMoves = Seq(17, 19)
+  val ginMoves = Seq(-10, -8, 8, 9, 10)
+  val kinMoves = Seq(-9, -1, 1, 8, 9, 10)
+  val ouMoves = Seq(-10, -9, -8, -1, 1, 8, 9, 10)
+  val nariKinMoves = Seq(-9, -1, 1, 8, 9, 10)
+
+  def abstractCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean, moves: Seq[Int]): Boolean = {
+    val moveDistance = if (isSenteTurnState) now - toIndex else toIndex - now
+    moves.contains(moveDistance)
   }
+
+  /** 歩の動きの定義 */
+  def fuCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, fuMoves)
+
+  /** 桂の動きの定義 */
+  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, keiMoves)
+
+  /** 銀の動きの定義 */
+  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, ginMoves)
+
+  /** 金の動きの定義 */
+  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, kinMoves)
+
+  /** 王の動きの定義 */
+  def ouCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, ouMoves)
+
+  /** 成り駒の動きの定義 */
+  def nariKinCanMoves(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = abstractCanMove(now, toIndex, isSenteTurnState, nariKinMoves)
 
   /** 香の動きの定義 */
   def kyoCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
@@ -242,41 +272,6 @@ case class Board(komas: List[Koma]) {
       case true => isSameColumnDistance(moveDistance) && moveDistance > 0
       case false => isSameColumnDistance(moveDistance) && moveDistance < 0
     }
-  }
-
-  /** 桂の動きの定義 */
-  def keiCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
-    val moveDistance = now - toIndex
-    isSenteTurnState match {
-      case true => moveDistance == 17 || moveDistance == 19
-      case false => moveDistance == -17 || moveDistance == -19
-    }
-  }
-
-  /** 銀の動きの定義 */
-  def ginCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
-    val moveDistance = now - toIndex
-    val absMoveDistance = Math.abs(now - toIndex)
-    isSenteTurnState match {
-      case true => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == 9
-      case false => absMoveDistance == 8 || absMoveDistance == 10 || moveDistance == -9
-    }
-  }
-
-  /** 金の動きの定義 */
-  def kinCanMove(now: Int, toIndex: Int, isSenteTurnState: Boolean): Boolean = {
-    val moveDistance = now - toIndex
-    val absMoveDistance = Math.abs(now - toIndex)
-    isSenteTurnState match {
-      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
-      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
-    }
-  }
-
-  /** 王の動きの定義 */
-  def ouCanMove(now: Int, toIndex: Int): Boolean = {
-    val absMoveDistance = Math.abs(now - toIndex)
-    absMoveDistance == 1 || absMoveDistance == 9 || absMoveDistance == 8 || absMoveDistance == 10
   }
 
   /** 飛車の動きの定義 */
@@ -330,16 +325,6 @@ case class Board(komas: List[Koma]) {
     } else true
   }
 
-  /** 成り駒の動きの定義 */
-  def nariKinCanMove(now: Int, toIndex: Int, isSenteTurnState:Boolean): Boolean = {
-    val moveDistance = now - toIndex
-    val absMoveDistance = Math.abs(now - toIndex)
-    isSenteTurnState match {
-      case true => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == 8 || moveDistance == 10
-      case false => absMoveDistance == 1 || absMoveDistance == 9 || moveDistance == -8 || moveDistance == -10
-    }
-  }
-
   /** 評価関数
     * 1. 駒得の評価値
     * 2. 王との距離の評価値
@@ -369,6 +354,7 @@ case class Board(komas: List[Koma]) {
         case ClickedKomaState.Uma => 16 :: senteKomaPoint
         case ClickedKomaState.Ryu => 18 :: senteKomaPoint
         case ClickedKomaState.Ou => 0 :: senteKomaPoint
+        case ClickedKomaState.Gyoku => 0 :: senteKomaPoint
         case _ => senteKomaPoint
       }
     })
@@ -394,6 +380,7 @@ case class Board(komas: List[Koma]) {
         case ClickedKomaState.Uma => 16 :: goteKomaPoint
         case ClickedKomaState.Ryu => 18 :: goteKomaPoint
         case ClickedKomaState.Ou => 0 :: goteKomaPoint
+        case ClickedKomaState.Gyoku => 0 :: goteKomaPoint
         case _ => goteKomaPoint
       }
     })
@@ -404,12 +391,11 @@ case class Board(komas: List[Koma]) {
   /** 王との距離の評価値 */
   def senteOuDistanceEvaluation: Double = {
     var senteDistanceEvaluationPoint: Double = 0
-    val (senteOuRow, senteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, true)), column(findKomaKind(ClickedKomaState.Ou, true)))
+    val (senteOuRow, senteOuColumn) = (row(filterOuGyoku(true)), column(filterOuGyoku(true)))
 
     //先手の駒と先手の王の距離
-    for (i <- 0 to senteKomaPoint.length - 1) {
-      if (senteKomaIndex(i) < 80) {
-        //盤上の場合
+    for (i <- senteKomaPoint.indices) {
+      if (senteKomaIndex(i) < 80) { //盤上の場合
         val nowRow: Int = row(senteKomaIndex(i))
         val nowColumn: Int = column(senteKomaIndex(i))
         val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
@@ -419,7 +405,7 @@ case class Board(komas: List[Koma]) {
       }
     }
     //後手の駒と先手の王の距離
-    for (i <- 0 to goteKomaPoint.length - 1) {
+    for (i <- goteKomaPoint.indices) {
       if (goteKomaIndex(i) < 80) { //盤上の場合
       val nowRow: Int = row(goteKomaIndex(i))
         val nowColumn: Int = column(goteKomaIndex(i))
@@ -434,12 +420,12 @@ case class Board(komas: List[Koma]) {
 
   def goteOuDistanceEvaluation: Double = {
     var goteDistanceEvaluationPoint: Double = 0
-    val (goteOuRow, goteOuColumn) = (row(findKomaKind(ClickedKomaState.Ou, false)), column(findKomaKind(ClickedKomaState.Ou, false)))
+    val (goteOuRow, goteOuColumn) = (row(filterOuGyoku(false)), column(filterOuGyoku(false)))
 
     //後手の駒と後手の王の距離
     for (i <- goteKomaPoint.indices) {
       if (goteKomaIndex(i) < 80) { //盤上の場合
-      val nowRow: Int = row(goteKomaIndex(i))
+        val nowRow: Int = row(goteKomaIndex(i))
         val nowColumn: Int = column(goteKomaIndex(i))
         val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
         goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + (16 - distanceToOu) * goteKomaPoint(i) //評価点 = (距離) * (駒の価値)
@@ -462,50 +448,46 @@ case class Board(komas: List[Koma]) {
   }
 
   /** 駒得の評価値 */
+  val evalMap: Map[ClickedKomaState, Int] = Map(
+    ClickedKomaState.Fu -> 1,
+    ClickedKomaState.Kyo -> 3,
+    ClickedKomaState.Kei -> 4,
+    ClickedKomaState.Gin -> 5,
+    ClickedKomaState.Kin -> 6,
+    ClickedKomaState.Kaku -> 10,
+    ClickedKomaState.Hisha -> 12,
+    ClickedKomaState.To -> 9,
+    ClickedKomaState.NariKyo -> 8,
+    ClickedKomaState.NariKei -> 8,
+    ClickedKomaState.NariGin -> 7,
+    ClickedKomaState.Uma -> 16,
+    ClickedKomaState.Uma -> 18
+  )
   def senteAmountEvaluation: Int = {
-    var senteAmountEvaluationPoint: Int = 0
-    senteKomaKind.foreach(komaKind =>
-      komaKind match {
-        case ClickedKomaState.Fu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 1
-        case ClickedKomaState.Kyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 3
-        case ClickedKomaState.Kei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 4
-        case ClickedKomaState.Gin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 5
-        case ClickedKomaState.Kin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 6
-        case ClickedKomaState.Kaku => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 10
-        case ClickedKomaState.Hisha => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 12
-        case ClickedKomaState.To => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 9
-        case ClickedKomaState.NariKyo => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
-        case ClickedKomaState.NariKei => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 8
-        case ClickedKomaState.NariGin => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 7
-        case ClickedKomaState.Uma => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 16
-        case ClickedKomaState.Ryu => senteAmountEvaluationPoint = senteAmountEvaluationPoint + 18
-        case _ =>
-      }
-    )
-    senteAmountEvaluationPoint
+    senteKomaKind.foldLeft(0)((result, koma) => result + evalMap.getOrElse(koma, 0))
   }
 
   def goteAmountEvaluation: Int = {
-    var goteAmountEvaluationPoint: Int = 0
-    goteKomaKind.foreach(komaKind =>
-      komaKind match {
-        case ClickedKomaState.Fu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 1
-        case ClickedKomaState.Kyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 3
-        case ClickedKomaState.Kei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 4
-        case ClickedKomaState.Gin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 5
-        case ClickedKomaState.Kin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 6
-        case ClickedKomaState.Kaku => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 10
-        case ClickedKomaState.Hisha => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 12
-        case ClickedKomaState.To => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 9
-        case ClickedKomaState.NariKyo => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
-        case ClickedKomaState.NariKei => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 8
-        case ClickedKomaState.NariGin => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 7
-        case ClickedKomaState.Uma => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 16
-        case ClickedKomaState.Ryu => goteAmountEvaluationPoint = goteAmountEvaluationPoint + 18
-        case _ =>
-      }
-    )
-    goteAmountEvaluationPoint
+    goteKomaKind.foldLeft(0) {
+      case (result, koma) =>
+        val komaPoint = koma match {
+          case ClickedKomaState.Fu => 1
+          case ClickedKomaState.Kyo => 3
+          case ClickedKomaState.Kei => 4
+          case ClickedKomaState.Gin => 5
+          case ClickedKomaState.Kin => 6
+          case ClickedKomaState.Kaku => 10
+          case ClickedKomaState.Hisha => 12
+          case ClickedKomaState.To => 9
+          case ClickedKomaState.NariKyo => 8
+          case ClickedKomaState.NariKei => 8
+          case ClickedKomaState.NariGin => 7
+          case ClickedKomaState.Uma => 16
+          case ClickedKomaState.Ryu => 18
+          case _ => 0
+        }
+        result + komaPoint
+    }
   }
 
   //駒得2, 王様との距離1ぐらいを想定
