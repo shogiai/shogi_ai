@@ -5,7 +5,8 @@ import scala.collection.immutable.::
 import scala.util.Random
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
-import scalafx.scene.control.Label
+import scalafx.scene.control.Alert.AlertType
+import scalafx.scene.control.{Alert, ButtonType, Label}
 import scalafx.scene.layout.GridPane
 import scalafx.scene.paint.Color._
 import scalafx.scene.shape.{Polygon, Rectangle}
@@ -430,6 +431,8 @@ object ShogiBoard extends JFXApp {
 
   def boardObjPane = {
     val pane = new GridPane
+
+    //盤面の表示
     board.cells.zipWithIndex.foreach { //cellsを繰り返し呼んでいる
       case (optKoma, index) => {
         if (inBord(index)) {
@@ -444,7 +447,68 @@ object ShogiBoard extends JFXApp {
         }
       }
     }
+
+    //投了確認ボタン
+    if (ryoPushed) {
+      val alert = new Alert(AlertType.Confirmation) {
+        initOwner(stage)
+        title = "投了しますか?"
+        headerText = "対局終了になり、A~Gボタンで新たな局面を始めることができます"
+      }
+      val result = alert.showAndWait()
+
+      result match {
+        case Some(ButtonType.OK) => {
+          ryoPushed = true
+          isWin = true
+          logOutPut
+        }
+        case _ =>
+          touPushed = false
+          ryoPushed = false
+      }
+    }
+
     pane
+  }
+
+  def komaObjGroup(koma: Koma): Group = {
+    val senteKomaShape = { //駒の形を定義している
+    val poly = koma.isSente match {
+        case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
+        case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
+      }
+      poly.setFill(Sienna)
+      poly.setStroke(Black)
+      poly
+    }
+
+    val komaLabel = { //升内の駒の置き場所を定義してる
+    val label = new Label
+      label.setText(koma.kind.name)
+      if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
+      if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
+        || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
+        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
+        label.setFont(Font(20))
+        label.setMaxSize(40, 40)
+        label.setLayoutX(20)
+        if (koma.isSente) label.setLayoutY(30)
+        else label.setLayoutY(25)
+      }
+      else {
+        label.setFont(Font(30))
+        label.setMaxSize(30, 30)
+        label.setLayoutX(25)
+        if (koma.isSente) label.setLayoutY(25)
+        else label.setLayoutY(20)
+      }
+
+      label.setAlignment(Pos.Center)
+      label
+    }
+    val obj = new Group(senteKomaShape, komaLabel) //駒の形、置き場所のセット
+    obj
   }
 
   /** セルの描画処理, ゲーム内での駒の動きはここで定義している */
@@ -1475,45 +1539,6 @@ object ShogiBoard extends JFXApp {
       repaint
     })
     group
-  }
-
-  def komaObjGroup(koma: Koma): Group = {
-    val senteKomaShape = { //駒の形を定義している
-    val poly = koma.isSente match {
-        case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
-        case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
-      }
-      poly.setFill(Sienna)
-      poly.setStroke(Black)
-      poly
-    }
-
-    val komaLabel = { //升内の駒の置き場所を定義してる
-    val label = new Label
-      label.setText(koma.kind.name)
-      if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
-      if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
-        || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
-        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
-        label.setFont(Font(20))
-        label.setMaxSize(40, 40)
-        label.setLayoutX(20)
-        if (koma.isSente) label.setLayoutY(30)
-        else label.setLayoutY(25)
-      }
-      else {
-        label.setFont(Font(30))
-        label.setMaxSize(30, 30)
-        label.setLayoutX(25)
-        if (koma.isSente) label.setLayoutY(25)
-        else label.setLayoutY(20)
-      }
-
-      label.setAlignment(Pos.Center)
-      label
-    }
-    val obj = new Group(senteKomaShape, komaLabel) //駒の形、置き場所のセット
-    obj
   }
 
   def allRandomBoard: Board = { //G
