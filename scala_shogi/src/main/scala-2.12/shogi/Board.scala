@@ -22,32 +22,24 @@ case class Board(komas: List[Koma]) {
     }}
   }
 
-  def filterOuGyoku(isSenteKoma: Boolean): Int = {
+  def findOuGyoku(isSenteKoma: Boolean): Int = {
     komas.filter(_.isSente == isSenteKoma).find(komas => komas.kind == ClickedKomaState.Ou || komas.kind == ClickedKomaState.Gyoku) match {
       case Some(Koma(kind, index, isSente, onBoard)) => index
-      case _ => -1
+      case None => -1
     }
   }
 
-  def filterPlaceKomaKind(place: Int): ClickedKomaState = {
-    komas.filter(_.index == place) match {
-      case List(Koma(kind, index, isSente, onBoard)) => kind
-      case _ => ClickedKomaState.Blank //起こりえない
+  def findPlaceKomaKind(place: Int): ClickedKomaState = {
+    komas.find(_.index == place) match {
+      case Some(Koma(kind, index, isSente, onBoard)) => kind
+      case None => ClickedKomaState.Blank //起こりえない
     }
   }
 
-  def filterPlaceKoma(place: Int): Option[Koma] = {
-    komas.filter(_.index == place) match {
-      case List(koma) => Some(koma)
+  def findPlaceKomaisSente(place: Int): Option[Boolean] = {
+    komas.find(_.index == place) match {
+      case Some(Koma(kind, index, isSente, onBoard)) => Some(isSente)
       case _ => None
-    }
-  }
-
-  //stockNariIndex
-  def filterPlaceKomaisSente(place: Int): Option[Boolean] = {
-    komas.filter(_.index == place) match {
-      case List(Koma(kind, index, isSente, onBoard)) => Some(isSente)
-      case _ => None //起こりえない
     }
   }
 
@@ -391,7 +383,7 @@ case class Board(komas: List[Koma]) {
   /** 王との距離の評価値 */
   def senteOuDistanceEvaluation: Double = {
     var senteDistanceEvaluationPoint: Double = 0
-    val (senteOuRow, senteOuColumn) = (row(filterOuGyoku(true)), column(filterOuGyoku(true)))
+    val (senteOuRow, senteOuColumn) = (row(findOuGyoku(true)), column(findOuGyoku(true)))
 
     //先手の駒と先手の王の距離
     for (i <- senteKomaPoint.indices) {
@@ -420,7 +412,7 @@ case class Board(komas: List[Koma]) {
 
   def goteOuDistanceEvaluation: Double = {
     var goteDistanceEvaluationPoint: Double = 0
-    val (goteOuRow, goteOuColumn) = (row(filterOuGyoku(false)), column(filterOuGyoku(false)))
+    val (goteOuRow, goteOuColumn) = (row(findOuGyoku(false)), column(findOuGyoku(false)))
 
     //後手の駒と後手の王の距離
     for (i <- goteKomaPoint.indices) {
