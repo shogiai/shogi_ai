@@ -1,22 +1,25 @@
 package shogi
 
 import java.io._
+
 import scala.collection.immutable.::
 import scala.util.Random
 import scalafx.application.JFXApp
 import scalafx.geometry.Pos
+import scalafx.scene
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, ButtonType, Label}
 import scalafx.scene.layout.GridPane
 import scalafx.scene.paint.Color._
 import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
-import scalafx.scene.{Group, Scene}
+import scalafx.scene.{Cursor, Group, Scene}
 
 /** JFXApp { を使い、traitの設定をしつつ、*/
 object ShogiBoard extends JFXApp {
   val (senteSideKoma, goteSideKoma) = (true, false)
   val (onBoardStartKoma, handStartKoma) = (true, false)
+  var isToryo = false
 
   val initialKomas: List[Koma] = initialBoard match { case Board(komas) => komas }
   val initialLength: Int = initialKomas.length
@@ -193,6 +196,15 @@ object ShogiBoard extends JFXApp {
   def inBord(index: Int) = index <= 80 && index >= 0
   def outOfBord(index: Int) = index >= 81 && index <= 134 //持ち駒,テンプレート描画の場所
 
+  def displayPlace(index: Int) = index == 81 || index == 87 || index == 93 || index == 99 ||
+    index == 105 || index == 106 || index == 107 || index == 108 || index == 109 || index == 110 ||
+    index == 111 || index == 117 || index == 123 || index == 129
+
+  def buttomPlace(index: Int) = index == 81 || index == 87 || index == 93 || index == 99 || index == 105||
+    index == 111 || index == 117 || index == 123 || index == 129
+
+  def inHand(index: Int) = index >= 81 && index <= 134 && !displayPlace(index)
+
   //Sceneクラスをインスタンス化したもの
   val boardScene = new Scene {
     fill = Transparent
@@ -206,9 +218,10 @@ object ShogiBoard extends JFXApp {
     maximized = true
   }
 
+  var selectHand: Cursor = Cursor.Default
+
   def repaint: Unit = {
     boardScene.content = boardObjPane
-    boardScene.cursor
   }
 
   def boardObjPane = {
@@ -230,6 +243,11 @@ object ShogiBoard extends JFXApp {
       }
     }
 
+    pane.cursor = (selectHand)
+    //println("pane",pane.cursor)
+    //pane.setCursor(Cursor.Hand)
+    //pane.cursorProperty()
+
     //投了確認ボタン
     if (toryoPushed) {
       val alert = new Alert(AlertType.Confirmation) {
@@ -242,6 +260,7 @@ object ShogiBoard extends JFXApp {
       result match {
         case Some(ButtonType.OK) => {
           toryoPushed = false
+          isToryo = true
           isWin = true
           logOutPut
         }
@@ -308,7 +327,7 @@ object ShogiBoard extends JFXApp {
     val isTaikyoku = kifu.length > 3
 
     /** 待ったのボタン更新 */
-    board = if (onBoardKomas != pastKomas && !isWin) {
+    board = if (onBoardKomas != pastKomas && !isToryo) {
       val addBoard: Board = Board(Koma(ClickedKomaState.Ma, 105, isSenteTurnState, displayKoma) :: onBoardKomas)
       addBoard
     } else Board(onBoardKomas)
@@ -647,8 +666,8 @@ object ShogiBoard extends JFXApp {
 
     /** 以下、王が詰んでいるかのチェック関数 */
     def isCheckmateCheck: Boolean = {
-      val ownOuIndex: Int = board.filterOuGyoku(isSenteTurnState) //自分の王の位置
-      val enemyOuIndex: Int = board.filterOuGyoku(!isSenteTurnState) //敵の王の位置
+      val ownOuIndex: Int = board.findOuGyoku(isSenteTurnState) //自分の王の位置
+      val enemyOuIndex: Int = board.findOuGyoku(!isSenteTurnState) //敵の王の位置
 
       /** getBackWithoutOuPattern */
       //toIndexに王以外の駒が動けるかどうかを調べることで、相手の駒を取り返せるかどうかを調べるための関数
@@ -1118,7 +1137,7 @@ object ShogiBoard extends JFXApp {
       var stockIndex: List[Int] = Nil
       for (fromIndex <- 0 to 80) { //詰まされる側が敵の王を取れるかどうか
         if (canTakePlace(fromIndex, clickedIndex, ownSideKoma, board)) {
-          val koma = board.filterPlaceKomaKind(fromIndex)
+          val koma = board.findPlaceKomaKind(fromIndex)
           stockKoma = koma :: stockKoma
         }
       }
@@ -1138,8 +1157,8 @@ object ShogiBoard extends JFXApp {
       /** 棋譜内での重複発見のための処理 */
       //仮に効きが重複していた駒が今動いた駒と一致していた場合
       var directionPrint: String = ""
-      if (tyofukuCheck.contains(board.filterPlaceKomaKind(selectedCellIndex))) {
-        val sameKomaIndex = board.filterKomaKind(board.filterPlaceKomaKind(selectedCellIndex), isSenteTurnState)
+      if (tyofukuCheck.contains(board.findPlaceKomaKind(selectedCellIndex))) {
+        val sameKomaIndex = board.filterKomaKind(board.findPlaceKomaKind(selectedCellIndex), isSenteTurnState)
         var sameKomaMoveDistanceList: List[Int] = Nil
 
         val moveDistance = clickedIndex - selectedCellIndex
@@ -1174,9 +1193,9 @@ object ShogiBoard extends JFXApp {
       val place = clickedIndex
       val movedKoma = {
         //mustNariの場合はここで棋譜に追加、canNariの場合はボタンを選択した時に追加する方式に
-        if (mustNari) board.filterPlaceKomaKind(clickedIndex).name + directionPrint + "成り"
-        else if (utu) board.filterPlaceKomaKind(clickedIndex).name + directionPrint + "打"
-        else board.filterPlaceKomaKind(clickedIndex).name + directionPrint
+        if (mustNari) board.findPlaceKomaKind(clickedIndex).name + directionPrint + "成り"
+        else if (utu) board.findPlaceKomaKind(clickedIndex).name + directionPrint + "打"
+        else board.findPlaceKomaKind(clickedIndex).name + directionPrint
       }
 
       val tate = (clickedIndex / 9 + 1).toString
@@ -1351,8 +1370,8 @@ object ShogiBoard extends JFXApp {
     }
 
     def initialWinCheck() :Boolean = {
-      val ownOuIndex: Int = board.filterOuGyoku(isSenteTurnState) //自分の王の位置
-      val enemyOuIndex: Int = board.filterOuGyoku(!isSenteTurnState) //敵の王の位置
+      val ownOuIndex: Int = board.findOuGyoku(isSenteTurnState) //自分の王の位置
+      val enemyOuIndex: Int = board.findOuGyoku(!isSenteTurnState) //敵の王の位置
       var isInitialWin: Boolean = false
       for (fromIndex <- 0 to 80) { //詰まされる側が敵の王を取れるかどうか
         if (canTakePlace(fromIndex, enemyOuIndex, ownSideKoma, board)) {
@@ -1402,6 +1421,7 @@ object ShogiBoard extends JFXApp {
         pastBoard = board //待ったはなし
         kifu = List("まで","手で","勝ち")
         isSenteTurnState = true
+        isToryo = false
       }
       else if (waitBranch) {
         board = pastBoard
@@ -1444,6 +1464,19 @@ object ShogiBoard extends JFXApp {
       clickCancel
     }
     /** ここまで駒をクリックした時に使われる関数群 */
+
+
+    /** 実際に駒にマウスが乗ってきた場合の処理 */
+    val moveedIndex = clickedIndex //movedIndexとして扱う
+    group.setOnMouseMoved(e => {
+      if ((board.findPlaceKomaisSente(moveedIndex).contains(isSenteTurnState) && (inBord(moveedIndex) || inHand(moveedIndex))) || //そこに手番側の動かせる駒があるor
+        (buttomPlace(moveedIndex) && board.findPlaceKomaisSente(moveedIndex).isDefined)) { //ボタンの場所でそこに駒がある
+        selectHand = Cursor.OpenHand
+      } else {
+        selectHand = Cursor.WResize
+      }
+      repaint
+    })
 
     /** 実際に駒がクリックがされた場合の処理 */
     group.setOnMouseClicked(e => {
