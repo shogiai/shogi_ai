@@ -891,6 +891,7 @@ object ShogiBoard extends JFXApp {
     def toMoveBoard: Boolean = clickedIndex <= 80
     def handPlace: Boolean = (clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex - 81) % 6 != 0 && (clickedIndex-81) / 6 != 4
 
+    /** "selectedCellIndex == clickedIndex && clickedKomaKind != ClickedKomaState.None" である状態 */
     val isFillLightBulue: Boolean = selectedCellIndex == clickedIndex && clickedKomaKind != ClickedKomaState.None
     val fillColor = if (isFillLightBulue) {
       LightBlue
@@ -911,18 +912,18 @@ object ShogiBoard extends JFXApp {
     /** クリック時にどの判定を行うべきか分岐 */
     def useHandKomaBranch: Boolean = {
       isSenteTurnState match {
-        case true => ((optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) || optOnBoardKomaState.contains(false)) &&
+        case true => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) &&
           (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
-        case false => ((optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) || optOnBoardKomaState == Option(false)) &&
+        case false => (optOnBoard.contains(false) || optOnBoardKomaState == Option(false)) &&
           (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
       }
     }
 
     def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
       isSenteTurnState match {
-        case true => ((optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) || clickedKomaKind == koma) &&
+        case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) && // && clickedKomaKind == ClickedKomaState.None
           (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
-        case false => ((optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) || clickedKomaKind == koma) &&
+        case false => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
           (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
       }
     }
@@ -1113,7 +1114,6 @@ object ShogiBoard extends JFXApp {
     }
     /** ここまで棋譜出力の方向 */
 
-
     /** 駒をクリックした場合の分岐 */
     def nariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.Nari)
     def funariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.FuNari)
@@ -1122,7 +1122,7 @@ object ShogiBoard extends JFXApp {
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
       optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
       optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
-    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta) && selectedCellIndex == 105
+    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta)
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
@@ -1130,8 +1130,10 @@ object ShogiBoard extends JFXApp {
       optIsSenteKomaState = optIsSenteKoma
       optOnBoardKomaState = optOnBoard
     }
-    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) addState
-    def fromHandToBoradAddState = if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
+
+    //自分の駒である場合に付与というようにしたい
+    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    def fromHandToBoradAddState = if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
 
     var firstClickFlag: Boolean = false
     def clickCancel = {
@@ -1345,7 +1347,7 @@ object ShogiBoard extends JFXApp {
     /** 盤上から盤上へ移動する駒が行う処理 */
     def inBordKomaMoveFlow(koma: ClickedKomaState) = {
       fromToBoradAddState(koma)
-      if (canMove(koma)) {
+      if (canMove(clickedKomaKind)) {
         takeKomaAndplayAndInitialize
         if (!isCanNari) tumiCheckFlow
       }
@@ -1468,19 +1470,19 @@ object ShogiBoard extends JFXApp {
     val isInitial = kifu.length <= 3
     val isTaikyoku = kifu.length > 3
 
-    val moveedIndex = clickedIndex //movedIndexとして扱う
+    val movedIndex = clickedIndex //movedIndexとして扱う
     group.setOnMouseMoved(e => {
       if (isWin || isCanNari) { //勝ちと成り不成の場合に押せるのはボタンのみ
-        if (buttomPlace(moveedIndex) && board.findPlaceKomaisSente(moveedIndex).isDefined) {
+        if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) {
           selectHand = Cursor.OpenHand
         } else {
           selectHand = Cursor.WResize
         }
       } else { //普段は
-        if (((board.findPlaceKomaisSente(moveedIndex).contains(isSenteTurnState) && (inBord(moveedIndex) || inHand(moveedIndex))) && optOnBoardKomaState.isEmpty) || //そこに手番側の動かせる駒がある
-          (buttomPlace(moveedIndex) && board.findPlaceKomaisSente(moveedIndex).isDefined) || //ボタンの場所でそこに駒がある
-          (canMove(clickedKomaKind) && isNotFriendKoma(clickedIndex) && optOnBoardKomaState.contains(true)) ||
-          (optOnBoardKomaState.contains(false) && canSetFromHand) //持ち駒選択中
+        if (board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || inHand(movedIndex)) || //そこに手番側の動かせる駒がある
+          (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) || //ボタンの場所でそこに駒がある
+          (canMove(clickedKomaKind) && isNotFriendKoma(clickedIndex) && optOnBoardKomaState.contains(true)) || //盤上の駒選択中
+          (optOnBoardKomaState.contains(false) && canSetFromHand)  //持ち駒選択中
         ) { //選択した駒が動ける
           selectHand = Cursor.OpenHand
         } else {
@@ -1490,62 +1492,62 @@ object ShogiBoard extends JFXApp {
       repaint
     })
 
+    def selectedCellIndexBranch = {
+      board.findPlaceKomaisSente(clickedIndex).contains(isSenteTurnState) &&
+        !(optOnBoard.contains(true) && outOfBord(clickedIndex)) //盤外かつOnBoardがtrueである駒はダメ
+    }
+
     /** 実際に駒がクリックがされた場合の処理 */
     group.setOnMouseClicked(e => {
 
       /** 初期化されている場合は、クリックされている座標を代入する */
       firstClickFlag = false
-      if (selectedCellIndex == -100) {
+      if (selectedCellIndexBranch) {
         selectedCellIndex = clickedIndex
         firstClickFlag = true
       }
 
       /** 初期化、待った、投了ボタンをクリックした場合の処理 */
       if (initializationBranch) initializationOrWaitFlow
-      else if (touRyoBranch) touRyoFlow
-      else if (waitBranch) initializationOrWaitFlow
+      if (touRyoBranch) touRyoFlow
+      if (waitBranch) initializationOrWaitFlow
 
       /** 駒が成るかどうかの判定をクリックした場合の処理 */
-      else if (nariChoiceBranch) nariChoiceFlow
-      else if (funariChoiceBranch) fuNariChoiceFlow
+      if (nariChoiceBranch) nariChoiceFlow
+      if (funariChoiceBranch) fuNariChoiceFlow
 
       /** 持ち駒をクリックして盤面に打つ場合の処理 */
-      else if (useHandKomaBranch) useHandKomaFlow
+      if (useHandKomaBranch) useHandKomaFlow
       /** 盤面の歩を移動させる場合の処理 */
-      else if (inBoardKomaBranch(ClickedKomaState.Fu)) inBordKomaMoveFlow(ClickedKomaState.Fu)
+      if (inBoardKomaBranch(ClickedKomaState.Fu)) inBordKomaMoveFlow(ClickedKomaState.Fu)
       /** 香車の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Kyo)) inBordKomaMoveFlow(ClickedKomaState.Kyo)
+      if (inBoardKomaBranch(ClickedKomaState.Kyo)) inBordKomaMoveFlow(ClickedKomaState.Kyo)
       /** 桂馬の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Kei)) inBordKomaMoveFlow(ClickedKomaState.Kei)
+      if (inBoardKomaBranch(ClickedKomaState.Kei)) inBordKomaMoveFlow(ClickedKomaState.Kei)
       /** 銀の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Gin)) inBordKomaMoveFlow(ClickedKomaState.Gin)
+      if (inBoardKomaBranch(ClickedKomaState.Gin)) inBordKomaMoveFlow(ClickedKomaState.Gin)
       /** 金の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Kin)) inBordKomaMoveFlow(ClickedKomaState.Kin)
+      if (inBoardKomaBranch(ClickedKomaState.Kin)) inBordKomaMoveFlow(ClickedKomaState.Kin)
       /** 王の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Ou)) inBordKomaMoveFlow(ClickedKomaState.Ou)
+      if (inBoardKomaBranch(ClickedKomaState.Ou)) inBordKomaMoveFlow(ClickedKomaState.Ou)
       /** 玉の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Gyoku)) inBordKomaMoveFlow(ClickedKomaState.Gyoku)
+      if (inBoardKomaBranch(ClickedKomaState.Gyoku)) inBordKomaMoveFlow(ClickedKomaState.Gyoku)
       /** 角の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Kaku)) inBordKomaMoveFlow(ClickedKomaState.Kaku)
+      if (inBoardKomaBranch(ClickedKomaState.Kaku)) inBordKomaMoveFlow(ClickedKomaState.Kaku)
       /** 飛車の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Hisha)) inBordKomaMoveFlow(ClickedKomaState.Hisha)
+      if (inBoardKomaBranch(ClickedKomaState.Hisha)) inBordKomaMoveFlow(ClickedKomaState.Hisha)
       /** との場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.To)) inBordKomaMoveFlow(ClickedKomaState.To)
+      if (inBoardKomaBranch(ClickedKomaState.To)) inBordKomaMoveFlow(ClickedKomaState.To)
       /** 成香の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.NariKyo)) inBordKomaMoveFlow(ClickedKomaState.NariKyo)
+      if (inBoardKomaBranch(ClickedKomaState.NariKyo)) inBordKomaMoveFlow(ClickedKomaState.NariKyo)
       /** 成桂の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.NariKei)) inBordKomaMoveFlow(ClickedKomaState.NariKei)
+      if (inBoardKomaBranch(ClickedKomaState.NariKei)) inBordKomaMoveFlow(ClickedKomaState.NariKei)
       /** 成銀の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.NariGin)) inBordKomaMoveFlow(ClickedKomaState.NariGin)
+      if (inBoardKomaBranch(ClickedKomaState.NariGin)) inBordKomaMoveFlow(ClickedKomaState.NariGin)
       /** 馬の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Uma)) inBordKomaMoveFlow(ClickedKomaState.Uma)
+      if (inBoardKomaBranch(ClickedKomaState.Uma)) inBordKomaMoveFlow(ClickedKomaState.Uma)
       /** 龍の場合 */
-      else if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu)
-
-      else {
-        firstClickFlag = false
-        clickCancel
-      }
+      if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu)
 
       //todo クリック問題再調査
       //デバッグ用
