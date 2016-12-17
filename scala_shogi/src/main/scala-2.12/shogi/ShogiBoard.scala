@@ -34,11 +34,6 @@ object ShogiBoard extends JFXApp {
       initialKomas)
   var pastBoard: Board = board
 
-  /** todo
-    * 1. 成り/不成を一文字にして、移動させる
-    * 2. 初手とそれ以外で分ける
-    */
-
   /** 棋譜の出力 */
   var kifu: List[String] = List("まで","手で","勝ち")
 
@@ -484,19 +479,9 @@ object ShogiBoard extends JFXApp {
           goteToryoBoard
         }
       }
-      case (_, _, _, true) => isSenteTurnState match { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
-        case true => { //先手の手番 => 王手です(先手)
-        val senteToryoBoard: Board = Board(
-            Koma(ClickedKomaState.DisplayOu, 127, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 128, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.De, 133, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 134, isSenteTurnState, displayKoma) :: secondKomas) //王手です
-          senteToryoBoard
-        }
-        case false => { //後手の手番 => 王手です(後手)
-        val goteToryoBoard: Board = Board(
-            Koma(ClickedKomaState.DisplayOu, 85, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 86, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.De, 91, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 92, isSenteTurnState, displayKoma) :: secondKomas) //王手です
-          goteToryoBoard
-        }
+      case (_, _, _, true) => { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
+        Board(Koma(ClickedKomaState.DisplayOu, 107, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 108, isSenteTurnState, displayKoma) ::
+          Koma(ClickedKomaState.De, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 110, isSenteTurnState, displayKoma) :: secondKomas) //王手です
       }
       case _ => board
     }
@@ -942,35 +927,6 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    def nariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.Nari)
-    def funariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.FuNari)
-    def touRyoBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.TouRyo)
-
-    /** 初期化, 待った */
-    def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
-      optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
-      optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
-    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta) && selectedCellIndex == 105
-
-    /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
-    def addState = {
-      clickedKomaKind = optClickedKomaKind.getOrElse(ClickedKomaState.None)
-      optIsSenteKomaState = optIsSenteKoma
-      optOnBoardKomaState = optOnBoard
-    }
-    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) addState
-    def fromHandToBoradAddState = if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
-
-    var firstClickFlag: Boolean = false
-    def clickCancel = {
-      if (board.notOwn(selectedCellIndex, clickedIndex) && !firstClickFlag) {
-        clickedKomaKind = ClickedKomaState.None
-        optIsSenteKomaState = None
-        optOnBoardKomaState = None
-        selectedCellIndex = -100
-      }
-    }
-
     /** 以下棋譜出力の方向 */
     //上から移動してくる
     def fromLeftUp(moveDistance: Int) = moveDistance % 10 == 0 && moveDistance > 0
@@ -1142,7 +1098,6 @@ object ShogiBoard extends JFXApp {
       }
       else ""
     }
-    /** ここまで棋譜出力の方向 */
 
     def tyofukuCheck: List[ClickedKomaState] = {
       var stockKoma: List[ClickedKomaState] = Nil
@@ -1155,6 +1110,37 @@ object ShogiBoard extends JFXApp {
       }
       val tyofukuKoma = stockKoma diff stockKoma.distinct
       tyofukuKoma
+    }
+    /** ここまで棋譜出力の方向 */
+
+
+    /** 駒をクリックした場合の分岐 */
+    def nariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.Nari)
+    def funariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.FuNari)
+    def touRyoBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.TouRyo)
+
+    def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
+      optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
+      optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
+    def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta) && selectedCellIndex == 105
+
+    /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
+    def addState = {
+      clickedKomaKind = optClickedKomaKind.getOrElse(ClickedKomaState.None)
+      optIsSenteKomaState = optIsSenteKoma
+      optOnBoardKomaState = optOnBoard
+    }
+    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && clickedKomaKind == ClickedKomaState.None) addState
+    def fromHandToBoradAddState = if (optOnBoard.contains(false) && clickedKomaKind == ClickedKomaState.None) addState
+
+    var firstClickFlag: Boolean = false
+    def clickCancel = {
+      if (board.notOwn(selectedCellIndex, clickedIndex) && !firstClickFlag) {
+        clickedKomaKind = ClickedKomaState.None
+        optIsSenteKomaState = None
+        optOnBoardKomaState = None
+        selectedCellIndex = -100
+      }
     }
 
     /** 実際に手を指し、今までの条件を初期化する */
@@ -1419,13 +1405,13 @@ object ShogiBoard extends JFXApp {
           case Some(ClickedKomaState.F) => {
             while (isinitialWin) {
               board = slashHalfRandomBoard
-              isinitialWin = initialWinCheck
+              isinitialWin = initialWinCheck()
             }
           }
           case Some(ClickedKomaState.G) => {
             while (isinitialWin) {
               board = allRandomBoard
-              isinitialWin = initialWinCheck
+              isinitialWin = initialWinCheck()
             }
           }
           case _ =>
