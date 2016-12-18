@@ -270,7 +270,7 @@ object ShogiBoard extends JFXApp {
     val komaShape = { //駒の形を定義している
     val poly = {
       if (buttomKomas) {
-        Polygon(0, 0, 0, 80, 80, 0, 80, 80)
+        Polygon(5, 5, 5, 75, 75, 75, 75, 5)
       } else {
         koma.isSente match {
           case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
@@ -278,15 +278,8 @@ object ShogiBoard extends JFXApp {
         }
       }
     }
-
-      if (buttomKomas) {
-        poly.setFill(Gold)
-        poly.setStroke(Silver)
-      }
-      else {
-        poly.setFill(Sienna)
-        poly.setStroke(Black)
-      }
+      poly.setFill(Sienna)
+      poly.setStroke(Black)
       poly
     }
 
@@ -297,16 +290,17 @@ object ShogiBoard extends JFXApp {
       if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
         || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
         || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
+        label.setFont(Font(20))
+        label.setMaxSize(40, 40)
+        label.setLayoutX(20)
+        if (koma.isSente) label.setLayoutY(30)
+        else label.setLayoutY(25)
+      } else if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari ||
+        koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
         label.setFont(Font(30))
         label.setMaxSize(60, 60)
         label.setLayoutX(10)
         label.setLayoutY(10)
-        if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari ||
-          koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
-          label.setFont(Font(30))
-          label.setMaxSize(60, 60)
-          label.setLayoutX(10)
-          label.setLayoutY(10)
       } else if (koma.kind == ClickedKomaState.Matta) {
         label.setFont(Font(25))
         label.setMaxSize(75, 75)
