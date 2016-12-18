@@ -263,13 +263,30 @@ object ShogiBoard extends JFXApp {
   }
 
   def komaObjGroup(koma: Koma): Group = {
-    val senteKomaShape = { //駒の形を定義している
-    val poly = koma.isSente match {
-        case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
-        case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
+    val buttomKomas: Boolean = koma.kind == ClickedKomaState.Matta || koma.kind == ClickedKomaState.TouRyo ||
+      koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original ||
+      koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari
+
+    val komaShape = { //駒の形を定義している
+    val poly = {
+      if (buttomKomas) {
+        Polygon(0, 0, 0, 80, 80, 0, 80, 80)
+      } else {
+        koma.isSente match {
+          case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
+          case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
+        }
       }
-      poly.setFill(Sienna)
-      poly.setStroke(Black)
+    }
+
+      if (buttomKomas) {
+        poly.setFill(Gold)
+        poly.setStroke(Silver)
+      }
+      else {
+        poly.setFill(Sienna)
+        poly.setStroke(Black)
+      }
       poly
     }
 
@@ -279,20 +296,22 @@ object ShogiBoard extends JFXApp {
       if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
       if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
         || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
-        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen || koma.kind == ClickedKomaState.TouRyo
-        || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari || koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original
-      ) {
-        label.setFont(Font(20))
-        label.setMaxSize(40, 40)
-        label.setLayoutX(20)
-        if (koma.isSente) label.setLayoutY(30)
-        else label.setLayoutY(25)
+        || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
+        label.setFont(Font(30))
+        label.setMaxSize(60, 60)
+        label.setLayoutX(10)
+        label.setLayoutY(10)
+        if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari ||
+          koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
+          label.setFont(Font(30))
+          label.setMaxSize(60, 60)
+          label.setLayoutX(10)
+          label.setLayoutY(10)
       } else if (koma.kind == ClickedKomaState.Matta) {
-        label.setFont(Font(15))
-        label.setMaxSize(45, 45)
-        label.setLayoutX(17.5)
-        if (koma.isSente) label.setLayoutY(32.5)
-        else label.setLayoutY(27.5)
+        label.setFont(Font(25))
+        label.setMaxSize(75, 75)
+        label.setLayoutX(2.5)
+        label.setLayoutY(2.5)
       }
       else {
         label.setFont(Font(30))
@@ -305,7 +324,7 @@ object ShogiBoard extends JFXApp {
       label.setAlignment(Pos.Center)
       label
     }
-    val obj = new Group(senteKomaShape, komaLabel) //駒の形、置き場所のセット
+    val obj = new Group(komaShape, komaLabel) //駒の形、置き場所のセット
     obj
   }
 
