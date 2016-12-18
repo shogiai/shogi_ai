@@ -28,7 +28,7 @@ object ShogiBoard extends JFXApp {
   var board: Board = Board(
     Koma(ClickedKomaState.Sen, 87, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 93, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Ban, 99, displaySenteKoma, displayKoma) ::
       Koma(ClickedKomaState.GoKakuGo, 117, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 123, displaySenteKoma, displayKoma) ::
-      Koma(ClickedKomaState.A, 107, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.B, 108, displaySenteKoma, displayKoma) ::
+      Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) ::
       initialKomas)
   var pastBoard: Board = board
 
@@ -148,13 +148,8 @@ object ShogiBoard extends JFXApp {
 
     case object Matta extends ClickedKomaState("待った")
 
-    case object A extends ClickedKomaState("Ａ")
-    case object B extends ClickedKomaState("Ｂ")
-    case object C extends ClickedKomaState("Ｃ")
-    case object D extends ClickedKomaState("Ｄ")
-    case object E extends ClickedKomaState("Ｅ")
-    case object F extends ClickedKomaState("Ｆ")
-    case object G extends ClickedKomaState("Ｇ")
+    case object Normal extends ClickedKomaState("通常")
+    case object Original extends ClickedKomaState("独自")
 
     case object Tumi extends ClickedKomaState("詰")
     case object Mi extends ClickedKomaState("み")
@@ -164,6 +159,8 @@ object ShogiBoard extends JFXApp {
     case object Si extends ClickedKomaState("し")
 
     case object TouRyo extends ClickedKomaState("投了")
+    case object Tou extends ClickedKomaState("投")
+    case object Ryo extends ClickedKomaState("了")
 
     case object One extends ClickedKomaState("１")
     case object Two extends ClickedKomaState("２")
@@ -244,7 +241,7 @@ object ShogiBoard extends JFXApp {
       val alert = new Alert(AlertType.Confirmation) {
         initOwner(stage)
         title = "投了しますか?"
-        headerText = "対局終了になり、A~Gボタンで新たな局面を始めることができます"
+        headerText = "対局終了となり、「通常」の駒配置と6種類の「独自」の駒配置パターンの好きな方から新たな局面を始めることができます"
       }
       val result = alert.showAndWait()
 
@@ -283,7 +280,7 @@ object ShogiBoard extends JFXApp {
       if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
         || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
         || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen || koma.kind == ClickedKomaState.TouRyo
-        || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari
+        || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari || koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original
       ) {
         label.setFont(Font(20))
         label.setMaxSize(40, 40)
@@ -337,8 +334,8 @@ object ShogiBoard extends JFXApp {
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
 
     board = if (isInitial) {
-      Board(Koma(ClickedKomaState.A, 107, displaySenteKoma, displayKoma) ::
-        Koma(ClickedKomaState.B, 108, displaySenteKoma, displayKoma) :: mattaKomas)
+      Board(Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) ::
+        Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: mattaKomas)
     } else { //投ボタンを出す
       Board(Koma(ClickedKomaState.TouRyo, 107, isSenteTurnState, displayKoma) :: mattaKomas)
     }
@@ -355,7 +352,7 @@ object ShogiBoard extends JFXApp {
 
     /** 局面評価の表示 */
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
-    board = if (isTaikyoku && !isWin) {
+    board = if (!isWin) {
       if (board.evaluationFunction >= 400) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
@@ -400,55 +397,49 @@ object ShogiBoard extends JFXApp {
     /** 勝敗系のテンプレートの更新 */
     val secondKomas: List[Koma] = board match { case Board(komas) => komas }
 
-    board = (isOuCatch, isCheckmate, isWin) match {
+    board = (isOuCatch, isCheckmate, isToryo) match {
       case (Some(true), _, _) => isSenteTurnState match { //isOuCatch
         case true => { //先手番 => 先手勝ち
-        val senteOuCatchBoard: Board = Board(
-            Koma(ClickedKomaState.Sen, 111, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, isSenteTurnState, displayKoma) :: //先手勝ち
-              secondKomas)
-          senteOuCatchBoard
+          Board(Koma(ClickedKomaState.Sen, 111, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, isSenteTurnState, displayKoma) :: //先手勝ち
+            secondKomas)
         }
         case false => { //後手番 => 後手勝ち
-        val goteOuCatchBoard: Board = Board(
-            Koma(ClickedKomaState.Go, 111, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, isSenteTurnState, displayKoma) :: //後手勝ち
-              secondKomas)
-          goteOuCatchBoard
+          Board(Koma(ClickedKomaState.Go, 111, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, isSenteTurnState, displayKoma) :: //後手勝ち
+            secondKomas)
         }
       }
       case (_, Some(true), _) => isSenteTurnState match { //isCheckmate
         case true => { //先手番 => 後手勝ち
-          val senteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Go, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //後手勝ち
+          Board(Koma(ClickedKomaState.Go, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //後手勝ち
             Koma(ClickedKomaState.Sen, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 87, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Tumi, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 99, isSenteTurnState, displayKoma) :: //詰み
-              secondKomas)
-          senteTumiBoard
+            secondKomas)
         }
         case false => { //後手番 => 先手勝ち
-          val goteTumiBoard: Board = Board(
-            Koma(ClickedKomaState.Sen, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //先手勝ち
+          Board(Koma(ClickedKomaState.Sen, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //先手勝ち
             Koma(ClickedKomaState.Go, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 87, isSenteTurnState, displayKoma) ::
             Koma(ClickedKomaState.Tumi, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Mi, 99, isSenteTurnState, displayKoma) ::
-              secondKomas)
-          goteTumiBoard
+            secondKomas)
         }
       }
-      case (_, _, true) => isSenteTurnState match { //勝ち局面ではなく了ボタンを押した場合, 勝ちありと投了の場合は前に書いた方にmatchする
+      case (_, _, true) => isSenteTurnState match { //isToryo
         case true => { //先手番 => 後手勝ち
-        val senteToryoBoard: Board = Board(
-            Koma(ClickedKomaState.Go, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: secondKomas) //後手の勝ち
-          senteToryoBoard
+          Board(Koma(ClickedKomaState.Go, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //後手の勝ち
+            Koma(ClickedKomaState.Sen, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 87, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Tou, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ryo, 99, isSenteTurnState, displayKoma) :: //投了
+            secondKomas)
         }
         case false => { //後手番 => 先手勝ち
-        val goteToryoBoard: Board = Board(
-            Koma(ClickedKomaState.Sen, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
-              Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: secondKomas) //先手の勝ち
-          goteToryoBoard
+          Board(Koma(ClickedKomaState.Sen, 111, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 117, !isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Ka, 123, !isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Chi, 129, !isSenteTurnState, displayKoma) :: //先手の勝ち
+            Koma(ClickedKomaState.Go, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 87, isSenteTurnState, displayKoma) ::
+            Koma(ClickedKomaState.Tou, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ryo, 99, isSenteTurnState, displayKoma) :: //投了
+            secondKomas)
         }
       }
       case _ => board
@@ -1087,9 +1078,7 @@ object ShogiBoard extends JFXApp {
     def funariChoiceBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.FuNari)
     def touRyoBranch: Boolean = optClickedKomaKind.contains(ClickedKomaState.TouRyo)
 
-    def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.A) || optClickedKomaKind.contains(ClickedKomaState.B) ||
-      optClickedKomaKind.contains(ClickedKomaState.C) || optClickedKomaKind.contains(ClickedKomaState.D) ||
-      optClickedKomaKind.contains(ClickedKomaState.E) || optClickedKomaKind.contains(ClickedKomaState.F) || optClickedKomaKind.contains(ClickedKomaState.G)
+    def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.Normal) || optClickedKomaKind.contains(ClickedKomaState.Original)
     def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta)
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
@@ -1354,25 +1343,31 @@ object ShogiBoard extends JFXApp {
     def initializationOrWaitFlow = {
       if (initializationBranch) {
         optClickedKomaKind match { //初期化時の駒配置の選択が可能
-          case Some(ClickedKomaState.A) => board = initialBoard
-          case Some(ClickedKomaState.B) => bPushed = true
+          case Some(ClickedKomaState.Normal) => board = initialBoard
+          case Some(ClickedKomaState.Original) => bPushed = true
           case _ =>
         }
         var isinitialWin = true
 
         /** 初期局面確認ボタン */
-        val ButtonTypeOne = new ButtonType("One")
-        val ButtonTypeTwo = new ButtonType("Two")
-        val ButtonTypeThree = new ButtonType("Three")
-        val ButtonTypeFour = new ButtonType("Four")
-        val ButtonTypeFive = new ButtonType("Five")
-        val ButtonTypeSix = new ButtonType("Six")
+        val ButtonTypeOne = new ButtonType("１")
+        val ButtonTypeTwo = new ButtonType("２")
+        val ButtonTypeThree = new ButtonType("３")
+        val ButtonTypeFour = new ButtonType("４")
+        val ButtonTypeFive = new ButtonType("５")
+        val ButtonTypeSix = new ButtonType("６")
 
         if (bPushed) {
           val alert = new Alert(AlertType.Confirmation) {
             initOwner(stage)
-            title = "新たな局面で対局を開始しますか?"
+            title = "ルールを選択して下さい"
             headerText = "独自の6パターンの初期局面からゲームを開始できます"
+            contentText = "ルール１ 歩の下の先手は8,9段目、後手は1,2段目に歩以外の駒がランダムに配置されます" + "\n" +
+              "ルール２ 先手は歩が6段目に配置、歩の下の先手の駒は7,8,9段目にランダムに配置されます(後手も同様)。" + "\n" +
+              "ルール３ 先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" +
+              "ルール４ 斜めに並んだ歩の下に駒が配置されます" + "\n" +
+              "ルール５ 斜めの位置にランダムに駒が配置されます" + "\n" +
+              "ルール６ 9×9マス中にランダムに駒が配置されます"
             buttonTypes = Seq(ButtonTypeOne, ButtonTypeTwo, ButtonTypeThree, ButtonTypeFour, ButtonTypeFive, ButtonTypeSix, ButtonType.Cancel)
           }
           val result = alert.showAndWait()
