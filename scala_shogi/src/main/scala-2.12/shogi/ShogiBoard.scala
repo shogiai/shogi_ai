@@ -9,6 +9,7 @@ import scalafx.geometry.Pos
 import scalafx.scene.control.Alert.AlertType
 import scalafx.scene.control.{Alert, ButtonType, Label}
 import scalafx.scene.layout.GridPane
+import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color._
 import scalafx.scene.shape.{Polygon, Rectangle}
 import scalafx.scene.text.Font
@@ -18,7 +19,7 @@ import scalafx.scene.{Cursor, Group, Scene}
 object ShogiBoard extends JFXApp {
   val (senteSideKoma, goteSideKoma) = (true, false)
   val (onBoardStartKoma, handStartKoma) = (true, false)
-  var (isToryo, bPushed) = (false, false)
+  var (isToryo, originalPushed) = (false, false)
 
   val initialKomas: List[Koma] = initialBoard match { case Board(komas) => komas }
   val initialLength: Int = initialKomas.length
@@ -28,8 +29,7 @@ object ShogiBoard extends JFXApp {
   var board: Board = Board(
     Koma(ClickedKomaState.Sen, 87, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 93, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Ban, 99, displaySenteKoma, displayKoma) ::
       Koma(ClickedKomaState.GoKakuGo, 117, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 123, displaySenteKoma, displayKoma) ::
-      Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) ::
-      initialKomas)
+      Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: initialKomas)
   var pastBoard: Board = board
 
   /** 棋譜の出力 */
@@ -136,10 +136,6 @@ object ShogiBoard extends JFXApp {
     case object GoKakuGo extends ClickedKomaState("互")
     case object GoKaKuKaKu extends ClickedKomaState("角")
 
-    case object Nari extends ClickedKomaState("成り")
-    case object FuNari extends ClickedKomaState("不成")
-    case object Slash extends ClickedKomaState("/")
-
     case object Ban extends ClickedKomaState("番")
     case object Ni extends ClickedKomaState("二")
     case object DisplayOu extends ClickedKomaState("王")
@@ -148,41 +144,40 @@ object ShogiBoard extends JFXApp {
 
     case object Matta extends ClickedKomaState("待った")
 
-    case object Normal extends ClickedKomaState("通常")
-    case object Original extends ClickedKomaState("独自")
+    case object Normal extends ClickedKomaState("通常"+ "\n" +"配置")
+    case object Original extends ClickedKomaState("独自"+ "\n" +"配置")
+
+    case object Nari extends ClickedKomaState("成り")
+    case object FuNari extends ClickedKomaState("不成")
 
     case object Tumi extends ClickedKomaState("詰")
     case object Mi extends ClickedKomaState("み")
-    case object Ahira extends ClickedKomaState("あ")
-    case object Ri extends ClickedKomaState("り")
-    case object Nahira extends ClickedKomaState("な")
-    case object Si extends ClickedKomaState("し")
 
     case object TouRyo extends ClickedKomaState("投了")
     case object Tou extends ClickedKomaState("投")
     case object Ryo extends ClickedKomaState("了")
 
-    case object One extends ClickedKomaState("１")
-    case object Two extends ClickedKomaState("２")
-    case object Three extends ClickedKomaState("３")
-    case object Four extends ClickedKomaState("４")
-    case object Five extends ClickedKomaState("５")
-    case object Six extends ClickedKomaState("６")
-    case object Seven extends ClickedKomaState("７")
-    case object Eight extends ClickedKomaState("８")
-    case object Nine extends ClickedKomaState("９")
-    case object Ten extends ClickedKomaState("１０")
-    case object Eleven extends ClickedKomaState("１１")
-    case object Twelve extends ClickedKomaState("１２")
-    case object Thirteen extends ClickedKomaState("１３")
-    case object Fourteen extends ClickedKomaState("１４")
-    case object Fifteen extends ClickedKomaState("１５")
-    case object Sixteen extends ClickedKomaState("１６")
-    case object Seventeen extends ClickedKomaState("１７")
-    case object Eighteen extends ClickedKomaState("１８")
+    case object One extends ClickedKomaState("１枚")
+    case object Two extends ClickedKomaState("２枚")
+    case object Three extends ClickedKomaState("３枚")
+    case object Four extends ClickedKomaState("４枚")
+    case object Five extends ClickedKomaState("５枚")
+    case object Six extends ClickedKomaState("６枚")
+    case object Seven extends ClickedKomaState("７枚")
+    case object Eight extends ClickedKomaState("８枚")
+    case object Nine extends ClickedKomaState("９枚")
+    case object Ten extends ClickedKomaState("１０枚")
+    case object Eleven extends ClickedKomaState("１１枚")
+    case object Twelve extends ClickedKomaState("１２枚")
+    case object Thirteen extends ClickedKomaState("１３枚")
+    case object Fourteen extends ClickedKomaState("１４枚")
+    case object Fifteen extends ClickedKomaState("１５枚")
+    case object Sixteen extends ClickedKomaState("１６枚")
+    case object Seventeen extends ClickedKomaState("１７枚")
+    case object Eighteen extends ClickedKomaState("１８枚")
     case object Blank extends ClickedKomaState("")
 
-    lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu, Sen, Go, Te, No, Ka, Chi, Ri)
+    lazy val values = Seq(None, Fu, Kyo, Kei, Gin, Kin, Ou, Kaku, Hisha, To, NariKyo, NariKei, NariGin, Uma, Ryu, Sen, Go, Te, No, Ka, Chi)
   }
 
   /** 描画定義 */
@@ -194,6 +189,16 @@ object ShogiBoard extends JFXApp {
     index == 105 || index == 106 || index == 107 || index == 108 || index == 109 || index == 110 ||
     index == 111 || index == 117 || index == 123 || index == 129
   def buttomPlace(index: Int) = index == 106 || index == 107 || index == 108 || index == 109 || index == 110
+  def statusPlace(index: Int) = index == 81 || index == 87 || index == 93 || index == 99
+  def evaluationPlace(index: Int) = index == 111 || index == 117 || index == 123 || index == 129
+  def handDisplayPlace(index: Int) = index == 94 || index == 95 || index == 96 || index == 97 || index == 98 || index == 82 || index == 83 || index == 84 ||
+    index == 118 || index == 119 || index == 120 || index == 121 || index == 122 || index == 130 || index == 131 || index == 132
+
+  def isNariKoma(index: Int) = {
+    board.findPlaceKomaKind(index) == ClickedKomaState.To || board.findPlaceKomaKind(index) == ClickedKomaState.NariKyo ||
+    board.findPlaceKomaKind(index) == ClickedKomaState.NariKei || board.findPlaceKomaKind(index) == ClickedKomaState.NariGin ||
+    board.findPlaceKomaKind(index) == ClickedKomaState.Uma || board.findPlaceKomaKind(index) == ClickedKomaState.Ryu
+  }
 
   //Sceneクラスをインスタンス化したもの
   val boardScene = new Scene {
@@ -241,7 +246,7 @@ object ShogiBoard extends JFXApp {
       val alert = new Alert(AlertType.Confirmation) {
         initOwner(stage)
         title = "投了しますか?"
-        headerText = "対局終了となり、「通常」の駒配置と6種類の「独自」の駒配置パターンの好きな方から新たな局面を始めることができます"
+        headerText = "この対局を再開することはできません"
       }
       val result = alert.showAndWait()
 
@@ -270,7 +275,9 @@ object ShogiBoard extends JFXApp {
     val komaShape = { //駒の形を定義している
     val poly = {
       if (buttomKomas) {
-        Polygon(5, 5, 5, 75, 75, 75, 75, 5)
+        Polygon(75, 10, 75, 70, 5, 70, 5, 10) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
+      } else if (handDisplayPlace(koma.index)) {
+        Polygon()
       } else {
         koma.isSente match {
           case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
@@ -278,40 +285,72 @@ object ShogiBoard extends JFXApp {
         }
       }
     }
-      poly.setFill(Sienna)
-      poly.setStroke(Black)
+      if (buttomPlace(koma.index)) {
+        poly.setFill(Cyan)
+        poly.setStroke(LightBlue)
+      } else if (statusPlace(koma.index)) {
+        poly.setFill(GreenYellow)
+        poly.setStroke(LightGreen)
+      } else if (evaluationPlace(koma.index)) {
+        poly.setFill(Salmon)
+        poly.setStroke(Red)
+      } else {
+        poly.setFill(Sienna)
+        poly.setStroke(Black)
+      }
       poly
     }
 
-    val komaLabel = { //升内の駒の置き場所を定義してる
+    val komaLabel = {
     val label = new Label
       label.setText(koma.kind.name)
-      if (!koma.isSente && !(koma.index >= 81 && koma.onBoard)) label.setRotate(180)
+      if (!koma.isSente && !(displayPlace(koma.index) || handDisplayPlace(koma.index))) label.setRotate(180)
       if (koma.kind == ClickedKomaState.Ten || koma.kind == ClickedKomaState.Eleven || koma.kind == ClickedKomaState.Twelve || koma.kind == ClickedKomaState.Thirteen
         || koma.kind == ClickedKomaState.Fourteen || koma.kind == ClickedKomaState.Fifteen || koma.kind == ClickedKomaState.Sixteen
         || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
-        label.setFont(Font(20))
-        label.setMaxSize(40, 40)
-        label.setLayoutX(20)
-        if (koma.isSente) label.setLayoutY(30)
-        else label.setLayoutY(25)
-      } else if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari ||
-        koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
-        label.setFont(Font(30))
-        label.setMaxSize(60, 60)
-        label.setLayoutX(10)
-        label.setLayoutY(10)
-      } else if (koma.kind == ClickedKomaState.Matta) {
-        label.setFont(Font(25))
+        label.setFont(Font.font(22))
         label.setMaxSize(75, 75)
-        label.setLayoutX(2.5)
-        label.setLayoutY(2.5)
+        label.setLayoutX(3.3)
+        label.setLayoutY(28)
+      } else if (koma.kind == ClickedKomaState.Two || koma.kind == ClickedKomaState.Three || koma.kind == ClickedKomaState.Four || koma.kind == ClickedKomaState.Five
+        || koma.kind == ClickedKomaState.Six || koma.kind == ClickedKomaState.Seven || koma.kind == ClickedKomaState.Eight || koma.kind == ClickedKomaState.Nine) {
+        label.setFont(Font.font(25))
+        label.setMaxSize(50, 50)
+        label.setLayoutX(13)
+        label.setLayoutY(27.5)
+      } else if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari) {
+        label.setFont(Font.font(25))
+        label.setTextFill(Color.Snow)
+        label.setMaxSize(50, 50)
+        label.setLayoutX(15)
+        label.setLayoutY(27.5)
+      } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
+        label.setFont(Font(25))
+        label.setTextFill(Color.Snow)
+        label.setMaxSize(60, 60)
+        label.setLayoutX(15)
+        label.setLayoutY(12)
+      } else if (koma.kind == ClickedKomaState.Matta) {
+        label.setFont(Font.font(22))
+        label.setTextFill(Color.Snow)
+        label.setMaxSize(75, 75)
+        label.setLayoutX(7)
+        label.setLayoutY(29)
+      }
+      else if (displayPlace(koma.index)) {
+        label.setTextFill(Color.AliceBlue)
+        label.setFont(Font(30))
+        label.setMaxSize(30, 30)
+        label.setLayoutX(25)
+        if (koma.isSente) label.setLayoutY(25)
+        else label.setLayoutY(20)
       }
       else {
         label.setFont(Font(30))
         label.setMaxSize(30, 30)
         label.setLayoutX(25)
         if (koma.isSente) label.setLayoutY(25)
+        if (isNariKoma(koma.index)) label.setTextFill(Color.Crimson)
         else label.setLayoutY(20)
       }
 
@@ -335,6 +374,7 @@ object ShogiBoard extends JFXApp {
   def boardSwitch :Board = {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initialLength) }
     val pastKomas: List[Koma] = pastBoard match { case Board(komas) => komas.takeRight(initialLength) }
+    def isInitialBoard = Board(onBoardKomas) == initialBoard
 
     /** 待ったのボタン更新 */
     board = if (onBoardKomas != pastKomas && !isToryo) {
@@ -346,7 +386,9 @@ object ShogiBoard extends JFXApp {
     val isTaikyoku = kifu.length > 3
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
 
-    board = if (isInitial) {
+    board = if (isInitialBoard) {
+      Board(Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: mattaKomas)
+    } else if (isInitial) {
       Board(Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) ::
         Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: mattaKomas)
     } else { //投ボタンを出す
@@ -387,22 +429,24 @@ object ShogiBoard extends JFXApp {
 
     /** 状態説明系のテンプレートの更新 */
     val realKomas: List[Koma] = board match { case Board(komas) => komas }
-    board = (isNifu, ouTookKomaStock.nonEmpty, isSenteTurnState) match { //1手指すと出てくる
-      case (false, false, true) => {
-        Board(Koma(ClickedKomaState.Sen, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 99, isSenteTurnState, displayKoma) ::
-            realKomas) //先手番
-      }
-      case (false, false, false) => {
-        Board(Koma(ClickedKomaState.Go, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 99, isSenteTurnState, displayKoma) ::
-            realKomas) //後手番
-      }
-      case (true, false, _) => {
+    val displayOute: Boolean = ouTookKomaStock.nonEmpty && !isWin
+
+    board = (isNifu, displayOute, isSenteTurnState) match { //1手指すと出てくる
+      case (true, _, _) => {
         Board(Koma(ClickedKomaState.Ni, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Fu, 87, isSenteTurnState, displayKoma) ::
           Koma(ClickedKomaState.De, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 99, isSenteTurnState, displayKoma) :: realKomas) //二歩です
       }
       case (false, true, _) => {
         Board(Koma(ClickedKomaState.DisplayOu, 81, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 87, isSenteTurnState, displayKoma) ::
           Koma(ClickedKomaState.De, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Su, 99, isSenteTurnState, displayKoma) :: realKomas) //王手です
+      }
+      case (false, false, true) => {
+        Board(Koma(ClickedKomaState.Sen, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 99, isSenteTurnState, displayKoma) ::
+          realKomas) //先手番
+      }
+      case (false, false, false) => {
+        Board(Koma(ClickedKomaState.Go, 87, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Te, 93, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.Ban, 99, isSenteTurnState, displayKoma) ::
+          realKomas) //後手番
       }
       case _ => Board(realKomas)
     }
@@ -1357,31 +1401,32 @@ object ShogiBoard extends JFXApp {
       if (initializationBranch) {
         optClickedKomaKind match { //初期化時の駒配置の選択が可能
           case Some(ClickedKomaState.Normal) => board = initialBoard
-          case Some(ClickedKomaState.Original) => bPushed = true
+          case Some(ClickedKomaState.Original) => originalPushed = true
           case _ =>
         }
         var isinitialWin = true
 
         /** 初期局面確認ボタン */
-        val ButtonTypeOne = new ButtonType("１")
-        val ButtonTypeTwo = new ButtonType("２")
-        val ButtonTypeThree = new ButtonType("３")
-        val ButtonTypeFour = new ButtonType("４")
-        val ButtonTypeFive = new ButtonType("５")
-        val ButtonTypeSix = new ButtonType("６")
+        val ButtonTypeOne = new ButtonType("ルール１")
+        val ButtonTypeTwo = new ButtonType("ルール２")
+        val ButtonTypeThree = new ButtonType("ルール３")
+        val ButtonTypeFour = new ButtonType("ルール４")
+        val ButtonTypeFive = new ButtonType("ルール５")
+        val ButtonTypeSix = new ButtonType("ルール６")
 
-        if (bPushed) {
+        if (originalPushed) {
+          originalPushed = false //元に戻す
           val alert = new Alert(AlertType.Confirmation) {
             initOwner(stage)
             title = "ルールを選択して下さい"
             headerText = "独自の6パターンの初期局面からゲームを開始できます"
-            contentText = "ルール１ 歩の下の先手は8,9段目、後手は1,2段目に歩以外の駒がランダムに配置されます" + "\n" +
-              "ルール２ 先手は歩が6段目に配置、歩の下の先手の駒は7,8,9段目にランダムに配置されます(後手も同様)。" + "\n" +
-              "ルール３ 先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" +
-              "ルール４ 斜めに並んだ歩の下に駒が配置されます" + "\n" +
-              "ルール５ 斜めの位置にランダムに駒が配置されます" + "\n" +
-              "ルール６ 9×9マス中にランダムに駒が配置されます"
-            buttonTypes = Seq(ButtonTypeOne, ButtonTypeTwo, ButtonTypeThree, ButtonTypeFour, ButtonTypeFive, ButtonTypeSix, ButtonType.Cancel)
+            contentText =  "\n" + "ルール１ 歩以外の駒が歩の下の駒にランダムに配置されます" + "\n" + "\n" +
+              "ルール２ 歩の位置が1つ上がり、歩の下の3段に駒がランダムに配置されます" + "\n" + "\n" +
+              "ルール３ 先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" + "\n" +
+              "ルール４ 斜めに並んだ歩の下に駒が配置されます" + "\n" + "\n" +
+              "ルール５ 斜めの位置にランダムに駒が配置されます" + "\n" + "\n" +
+              "ルール６ 9×9マス中にランダムに駒が配置されます" + "\n" + "\n"
+              buttonTypes = Seq(ButtonTypeOne, ButtonTypeTwo, ButtonTypeThree, ButtonTypeFour, ButtonTypeFive, ButtonTypeSix, ButtonType.Cancel)
           }
           val result = alert.showAndWait()
 
@@ -1473,17 +1518,18 @@ object ShogiBoard extends JFXApp {
     group.setOnMouseMoved(e => {
       if (isWin || isCanNari) { //勝ちと成り不成の場合に押せるのはボタンのみ
         if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) {
-          selectHand = Cursor.OpenHand
+          selectHand = Cursor.Default
         } else {
           selectHand = Cursor.WResize
         }
       } else { //普段は
-        if (board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || inHand(movedIndex)) || //そこに手番側の動かせる駒がある
-          (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) || //ボタンの場所でそこに駒がある
+        if (board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || (inHand(movedIndex) && !handDisplayPlace(movedIndex))) || //そこに手番側の動かせる駒がある
           (canMove(clickedKomaKind) && isNotFriendKoma(clickedIndex) && optOnBoardKomaState.contains(true)) || //盤上の駒選択中
           (optOnBoardKomaState.contains(false) && canSetFromHand)  //持ち駒選択中
         ) { //選択した駒が動ける
           selectHand = Cursor.OpenHand
+        } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined){ //ボタンの場所でそこに駒がある
+          selectHand = Cursor.Default
         } else {
           selectHand = Cursor.WResize
         }
