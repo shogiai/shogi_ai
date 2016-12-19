@@ -34,6 +34,7 @@ object ShogiBoard extends JFXApp {
 
   /** 棋譜の出力 */
   var kifu: List[String] = List("まで","手で","勝ち")
+  var kifuStock: List[String] = List("まで","手で","勝ち")
 
   var evaluationLog: List[Int] = Nil
   val LOG_FILE_PATH = "kifu.txt" //ログ出力先
@@ -64,16 +65,17 @@ object ShogiBoard extends JFXApp {
       case  _ => List("")
     }
 
-    kifu = kifu.dropRight(3)
-    while(kifu.length >= 4) {
-      val itteList = kifu.take(4)
+    kifuStock = kifu //kifuは初期化されるまでバックアップとして取っておく
+    kifuStock = kifuStock.dropRight(3)
+    while(kifuStock.length >= 4) {
+      val itteList = kifuStock.take(4)
       val itte: String = itteList match {
         case List(yoko: String, tate: String, koma: String, evaluate: String) => yoko + tate + koma + evaluate
         case _ => ""
       }
 
       outPutKifu = itte :: outPutKifu
-      kifu = kifu.drop(4)
+      kifuStock = kifuStock.drop(4)
     }
 
     val in = new File(LOG_FILE_PATH)
@@ -255,7 +257,7 @@ object ShogiBoard extends JFXApp {
           toryoPushed = false
           isToryo = true
           isWin = true
-          if (isCanNari) kifu = kifu.drop(4)
+          if (isCanNari) kifuStock = kifuStock.drop(4)
           isCanNari = false
           logOutPut
         }
@@ -382,13 +384,11 @@ object ShogiBoard extends JFXApp {
     } else Board(onBoardKomas)
 
     /** 初期化ボタンと投了ボタンの更新 */
-    val isInitial = kifu.length <= 3
-    val isTaikyoku = kifu.length > 3
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
 
     board = if (isInitialBoard) {
       Board(Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: mattaKomas)
-    } else if (isInitial) {
+    } else if (isWin) {
       Board(Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) ::
         Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: mattaKomas)
     } else { //投ボタンを出す
@@ -1511,9 +1511,6 @@ object ShogiBoard extends JFXApp {
 
 
     /** 実際に駒にマウスが乗ってきた場合の処理 */
-    val isInitial = kifu.length <= 3
-    val isTaikyoku = kifu.length > 3
-
     val movedIndex = clickedIndex //movedIndexとして扱う
     group.setOnMouseMoved(e => {
       if (isWin || isCanNari) { //勝ちと成り不成の場合に押せるのはボタンのみ
