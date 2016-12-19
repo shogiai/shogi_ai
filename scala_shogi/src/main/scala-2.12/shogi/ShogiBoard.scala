@@ -246,7 +246,7 @@ object ShogiBoard extends JFXApp {
       val alert = new Alert(AlertType.Confirmation) {
         initOwner(stage)
         title = "投了しますか?"
-        headerText = "この対局を再開することはできません"
+        headerText = "投了した場合、この対局を再開することはできません"
       }
       val result = alert.showAndWait()
 
@@ -350,8 +350,8 @@ object ShogiBoard extends JFXApp {
         label.setMaxSize(30, 30)
         label.setLayoutX(25)
         if (koma.isSente) label.setLayoutY(25)
-        if (isNariKoma(koma.index)) label.setTextFill(Color.Crimson)
         else label.setLayoutY(20)
+        if (isNariKoma(koma.index)) label.setTextFill(Color.Crimson)
       }
 
       label.setAlignment(Pos.Center)
@@ -399,7 +399,7 @@ object ShogiBoard extends JFXApp {
     val toryoKomas: List[Koma] = board match { case Board(komas) => komas }
     board = isCanNari match {
       case true => {
-        Board(Koma(ClickedKomaState.Nari, 108, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.FuNari, 109, isSenteTurnState, displayKoma) ::
+        Board(Koma(ClickedKomaState.Nari, 109, isSenteTurnState, displayKoma) :: Koma(ClickedKomaState.FuNari, 110, isSenteTurnState, displayKoma) ::
             toryoKomas)
       }
       case false => Board(toryoKomas)
@@ -1523,9 +1523,9 @@ object ShogiBoard extends JFXApp {
           selectHand = Cursor.WResize
         }
       } else { //普段は
-        if (board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || (inHand(movedIndex) && !handDisplayPlace(movedIndex))) || //そこに手番側の動かせる駒がある
+        if ((board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || (inHand(movedIndex) && !handDisplayPlace(movedIndex))) && movedIndex != selectedCellIndex) || //そこに手番側の動かせる駒がある(2度目のクリックの場合は反応しない)
           (canMove(clickedKomaKind) && isNotFriendKoma(clickedIndex) && optOnBoardKomaState.contains(true)) || //盤上の駒選択中
-          (optOnBoardKomaState.contains(false) && canSetFromHand)  //持ち駒選択中
+          (optOnBoardKomaState.contains(false) && canSetFromHand) //持ち駒選択中
         ) { //選択した駒が動ける
           selectHand = Cursor.OpenHand
         } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined){ //ボタンの場所でそこに駒がある
