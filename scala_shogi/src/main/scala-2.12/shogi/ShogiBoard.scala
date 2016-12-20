@@ -34,7 +34,6 @@ object ShogiBoard extends JFXApp {
 
   /** 棋譜の出力 */
   var kifu: List[String] = List("まで","手で","勝ち")
-  var kifuStock: List[String] = List("まで","手で","勝ち")
 
   var evaluationLog: List[Int] = Nil
   val LOG_FILE_PATH = "kifu.txt" //ログ出力先
@@ -65,17 +64,16 @@ object ShogiBoard extends JFXApp {
       case  _ => List("")
     }
 
-    kifuStock = kifu //kifuは初期化されるまでバックアップとして取っておく
-    kifuStock = kifuStock.dropRight(3)
-    while(kifuStock.length >= 4) {
-      val itteList = kifuStock.take(4)
+    kifu = kifu.dropRight(3)
+    while(kifu.length >= 4) {
+      val itteList = kifu.take(4)
       val itte: String = itteList match {
         case List(yoko: String, tate: String, koma: String, evaluate: String) => yoko + tate + koma + evaluate
         case _ => ""
       }
 
       outPutKifu = itte :: outPutKifu
-      kifuStock = kifuStock.drop(4)
+      kifu = kifu.drop(4)
     }
 
     val in = new File(LOG_FILE_PATH)
@@ -148,6 +146,7 @@ object ShogiBoard extends JFXApp {
 
     case object Normal extends ClickedKomaState("通常"+ "\n" +"配置")
     case object Original extends ClickedKomaState("独自"+ "\n" +"配置")
+    case object KifuOutPut extends ClickedKomaState("棋譜"+ "\n" +"出力")
 
     case object Nari extends ClickedKomaState("成り")
     case object FuNari extends ClickedKomaState("不成")
@@ -260,9 +259,8 @@ object ShogiBoard extends JFXApp {
           toryoPushed = false
           isToryo = true
           isWin = true
-          if (isCanNari) kifuStock = kifuStock.drop(4)
+          if (isCanNari) kifu = kifu.drop(4)
           isCanNari = false
-          logOutPut
         }
         case _ => toryoPushed = false
       }
@@ -274,7 +272,7 @@ object ShogiBoard extends JFXApp {
 
   def komaObjGroup(koma: Koma): Group = {
     val buttomKomas: Boolean = koma.kind == ClickedKomaState.Matta || koma.kind == ClickedKomaState.TouRyo ||
-      koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original ||
+      koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut ||
       koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari
 
     val komaShape = { //駒の形を定義している
@@ -329,7 +327,7 @@ object ShogiBoard extends JFXApp {
         label.setMaxSize(50, 50)
         label.setLayoutX(15)
         label.setLayoutY(27.5)
-      } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original) {
+      } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut) {
         label.setFont(Font(25))
         label.setTextFill(Color.Snow)
         label.setMaxSize(60, 60)
@@ -384,16 +382,23 @@ object ShogiBoard extends JFXApp {
       Board(Koma(ClickedKomaState.Matta, 106, isSenteTurnState, displayKoma) :: onBoardKomas)
     } else Board(onBoardKomas)
 
-    /** 初期化ボタンと投了ボタンの更新 */
+    /** 棋譜出力ボタンの更新 */
     val mattaKomas: List[Koma] = board match { case Board(komas) => komas }
+    board = if (isWin && firstKifuMention) {
+      Board(Koma(ClickedKomaState.KifuOutPut, 107, displaySenteKoma, displayKoma) :: mattaKomas)
+    } else Board(mattaKomas)
+
+    /** 初期化ボタンと投了ボタンの更新 */
+    val isInitial = kifu.length <= 3
+    val kifuOutPutKomas: List[Koma] = board match { case Board(komas) => komas }
 
     board = if (isInitialBoard) {
-      Board(Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: mattaKomas)
-    } else if (isWin) {
-      Board(Koma(ClickedKomaState.Normal, 107, displaySenteKoma, displayKoma) ::
-        Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: mattaKomas)
+      Board(Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: kifuOutPutKomas)
+    } else if (isWin || isInitial) {
+      Board(Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) ::
+        Koma(ClickedKomaState.Normal, 109, displaySenteKoma, displayKoma) :: kifuOutPutKomas)
     } else { //投ボタンを出す
-      Board(Koma(ClickedKomaState.TouRyo, 107, isSenteTurnState, displayKoma) :: mattaKomas)
+      Board(Koma(ClickedKomaState.TouRyo, 107, isSenteTurnState, displayKoma) :: kifuOutPutKomas)
     }
 
     /** 成り不成ボタンの追加 */
@@ -1138,6 +1143,7 @@ object ShogiBoard extends JFXApp {
 
     def initializationBranch = optClickedKomaKind.contains(ClickedKomaState.Normal) || optClickedKomaKind.contains(ClickedKomaState.Original)
     def waitBranch = optClickedKomaKind.contains(ClickedKomaState.Matta)
+    def kifuOutPutBranch = optClickedKomaKind.contains(ClickedKomaState.KifuOutPut)
 
     /** 複数回クリックした時に、駒の情報を保存したり、条件を外したり、条件制御を行う */
     def addState = {
@@ -1508,6 +1514,13 @@ object ShogiBoard extends JFXApp {
       toryoPushed = true
       clickCancel
     }
+
+    def kifuOutPutFlow = {
+      logOutPut
+      admitWait = false
+      firstKifuMention = false
+      clickCancel
+    }
     /** ここまで駒をクリックした時に使われる関数群 */
 
 
@@ -1550,10 +1563,11 @@ object ShogiBoard extends JFXApp {
         firstClickFlag = true
       }
 
-      /** 初期化、待った、投了ボタンをクリックした場合の処理 */
+      /** 初期化、待った、投了ボタン、棋譜出力をクリックした場合の処理 */
       if (initializationBranch) initializationOrWaitFlow
       if (touRyoBranch) touRyoFlow
       if (waitBranch) initializationOrWaitFlow
+      if (kifuOutPutBranch) kifuOutPutFlow
 
       /** 駒が成るかどうかの判定をクリックした場合の処理 */
       if (nariChoiceBranch) nariChoiceFlow
@@ -1603,31 +1617,8 @@ object ShogiBoard extends JFXApp {
 
       boardSwitch
       isNifu = false
-      kifuOutPutCheck
     })
     group
-  }
-
-  /** isOuCatch, isCheckmateの時に棋譜を出力するか一回だけ確認する */
-  def kifuOutPutCheck = {
-    if ((isOuCatch.contains(true) || isCheckmate.contains(true)) && firstKifuMention) {
-      val kifuOutPutAlert = new Alert(AlertType.Confirmation) {
-        initOwner(stage)
-        title = "棋譜を出力しますか?"
-        headerText = "棋譜を出力した場合、この対局を再開することはできません"
-      }
-      val kifuOutPutResult = kifuOutPutAlert.showAndWait()
-
-      kifuOutPutResult match {
-        case Some(ButtonType.OK) => {
-          firstKifuMention = false
-          logOutPut
-          admitWait = false
-        }
-        case _ => firstKifuMention = false
-      }
-      boardSwitch
-    }
   }
 
   def allRandomBoard: Board = { //G
