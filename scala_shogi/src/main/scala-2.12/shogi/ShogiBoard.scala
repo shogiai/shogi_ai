@@ -217,7 +217,7 @@ object ShogiBoard extends JFXApp {
   var isCheckmate: Option[Boolean] = None
   var isOuCatch: Option[Boolean] = None
   var selectHand: Cursor = Cursor.Default
-  var firstKifuMention = true
+  var (firstKifuMention, firstWinMention) = (true, true)
 
   def repaint: Unit = {
     boardScene.content = boardObjPane
@@ -278,13 +278,13 @@ object ShogiBoard extends JFXApp {
     val komaShape = { //駒の形を定義している
     val poly = {
       if (buttomKomas) {
-        Polygon(75, 10, 75, 70, 5, 70, 5, 10) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
+        Polygon(76, 11, 76, 76, 6, 76, 6, 11) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
       } else if (handDisplayPlace(koma.index)) {
         Polygon()
       } else {
         koma.isSente match {
-          case true => Polygon(40, 10, 60, 20, 70, 70, 10, 70, 20, 20)
-          case false => Polygon(40, 70, 20, 60, 10, 10, 70, 10, 60, 60)
+          case true => Polygon(41, 11, 61, 21, 71, 71, 11, 71, 21, 21)
+          case false => Polygon(41, 71, 21, 61, 11, 11, 71, 11, 61, 61)
         }
       }
     }
@@ -292,10 +292,10 @@ object ShogiBoard extends JFXApp {
         poly.setFill(Cyan)
         poly.setStroke(LightBlue)
       } else if (statusPlace(koma.index)) {
-        poly.setFill(GreenYellow)
-        poly.setStroke(LightGreen)
+        poly.setFill(LawnGreen) //GreenYellow,LawnGreen,SpringGreen
+        poly.setStroke(LightGreen) //LightGreen
       } else if (evaluationPlace(koma.index)) {
-        poly.setFill(Salmon)
+        poly.setFill(HotPink) //Salmon
         poly.setStroke(Red)
       } else {
         poly.setFill(Sienna)
@@ -313,32 +313,32 @@ object ShogiBoard extends JFXApp {
         || koma.kind == ClickedKomaState.Seventeen || koma.kind == ClickedKomaState.Eighteen) {
         label.setFont(Font.font(22))
         label.setMaxSize(75, 75)
-        label.setLayoutX(3.3)
-        label.setLayoutY(28)
+        label.setLayoutX(4.3)
+        label.setLayoutY(29)
       } else if (koma.kind == ClickedKomaState.Two || koma.kind == ClickedKomaState.Three || koma.kind == ClickedKomaState.Four || koma.kind == ClickedKomaState.Five
         || koma.kind == ClickedKomaState.Six || koma.kind == ClickedKomaState.Seven || koma.kind == ClickedKomaState.Eight || koma.kind == ClickedKomaState.Nine) {
         label.setFont(Font.font(25))
         label.setMaxSize(50, 50)
-        label.setLayoutX(13)
-        label.setLayoutY(27.5)
+        label.setLayoutX(14)
+        label.setLayoutY(28.5)
       } else if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari) {
         label.setFont(Font.font(25))
-        label.setTextFill(Color.Snow)
+        label.setTextFill(Color.AliceBlue)
         label.setMaxSize(50, 50)
-        label.setLayoutX(15)
-        label.setLayoutY(27.5)
+        label.setLayoutX(16)
+        label.setLayoutY(28.5)
       } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut) {
         label.setFont(Font(25))
-        label.setTextFill(Color.Snow)
-        label.setMaxSize(60, 60)
-        label.setLayoutX(15)
-        label.setLayoutY(12)
+        label.setTextFill(Color.AliceBlue)
+        label.setMaxSize(62, 62)
+        label.setLayoutX(16)
+        label.setLayoutY(16)
       } else if (koma.kind == ClickedKomaState.Matta) {
         label.setFont(Font.font(22))
-        label.setTextFill(Color.Snow)
+        label.setTextFill(Color.AliceBlue)
         label.setMaxSize(75, 75)
-        label.setLayoutX(7)
-        label.setLayoutY(29)
+        label.setLayoutX(8)
+        label.setLayoutY(30)
       }
       else if (displayPlace(koma.index)) {
         label.setTextFill(Color.AliceBlue)
@@ -346,14 +346,14 @@ object ShogiBoard extends JFXApp {
         label.setMaxSize(30, 30)
         label.setLayoutX(25)
         if (koma.isSente) label.setLayoutY(25)
-        else label.setLayoutY(20)
+        else label.setLayoutY(21)
       }
       else {
         label.setFont(Font(30))
         label.setMaxSize(30, 30)
         label.setLayoutX(25)
         if (koma.isSente) label.setLayoutY(25)
-        else label.setLayoutY(20)
+        else label.setLayoutY(21)
         if (isNariKoma(koma.index)) label.setTextFill(Color.Crimson)
       }
 
@@ -414,16 +414,16 @@ object ShogiBoard extends JFXApp {
     /** 局面評価の表示 */
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
     board = if (!isWin) {
-      if (board.evaluationFunction >= 400) { //先手優勢
+      if (board.evaluationFunction >= 500) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction >= 200) { //先手有利
+      } else if (board.evaluationFunction >= 250) { //先手有利
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.Yuu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Yuri, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -400) { //後手優勢
+      } else if (board.evaluationFunction <= -500) { //後手優勢
         Board(Koma(ClickedKomaState.Go, 111, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displayGoteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displayGoteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -200) { //後手有利
+      } else if (board.evaluationFunction <= -250) { //後手有利
         Board(Koma(ClickedKomaState.Go, 111, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displayGoteKoma, displayKoma) ::
           Koma(ClickedKomaState.Yuu, 123, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Yuri, 129, displayGoteKoma, displayKoma) :: evaluationKomas)
       }
@@ -925,7 +925,7 @@ object ShogiBoard extends JFXApp {
     else White
 
     val grid = {
-      val rect = Rectangle(80, 80, fillColor)
+      val rect = Rectangle(82, 82, fillColor)
       if (toMoveBoard || handPlace) rect.setStroke(Black)
       rect
     }
@@ -1478,6 +1478,7 @@ object ShogiBoard extends JFXApp {
         kifu = kifu.drop(4) //待ったをした場合を取り除く
         if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
+      firstWinMention = true
       firstKifuMention = true
       firstClickFlag = false
       clickCancel
@@ -1606,7 +1607,6 @@ object ShogiBoard extends JFXApp {
       /** 龍の場合 */
       if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu)
 
-      //todo クリック問題再調査
       //デバッグ用
       println("selectedCellIndex:" + selectedCellIndex,"clickedIndex:"+clickedIndex,"stockNariIndex:" + stockNariIndex)
       println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
@@ -1614,11 +1614,77 @@ object ShogiBoard extends JFXApp {
       println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
       println("isSenteTurnState:" + isSenteTurnState)
       println("")
+      println(board.evaluationFunction)
+      println(board.senteEvaluation.toInt, board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
+      println(board.goteEvaluation.toInt, board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
+      println("")
 
       boardSwitch
       isNifu = false
+      winDisplay
+
     })
     group
+  }
+
+  def winDisplay {
+    (isOuCatch, isCheckmate, isToryo) match {
+      case (Some(true), _, _) => isSenteTurnState match { //isOuCatch
+        case true => { //先手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "次に王が取れる状態です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "次に玉が取れる状態です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case (_, Some(true), _) => isSenteTurnState match { //isCheckmate
+        case true => { //先手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "先手詰みです"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "後手詰みです"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case (_, _, true) => isSenteTurnState match { //isToryo
+        case true => { //先手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "先手投了です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "後手投了です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case _ =>
+    }
   }
 
   def allRandomBoard: Board = { //G
