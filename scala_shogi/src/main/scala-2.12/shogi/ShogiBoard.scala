@@ -217,7 +217,7 @@ object ShogiBoard extends JFXApp {
   var isCheckmate: Option[Boolean] = None
   var isOuCatch: Option[Boolean] = None
   var selectHand: Cursor = Cursor.Default
-  var firstKifuMention = true
+  var (firstKifuMention, firstWinMention) = (true, true)
 
   def repaint: Unit = {
     boardScene.content = boardObjPane
@@ -292,7 +292,7 @@ object ShogiBoard extends JFXApp {
         poly.setFill(Cyan)
         poly.setStroke(LightBlue)
       } else if (statusPlace(koma.index)) {
-        poly.setFill(GreenYellow) //GreenYellow,LawnGreen,SpringGreen
+        poly.setFill(LawnGreen) //GreenYellow,LawnGreen,SpringGreen
         poly.setStroke(LightGreen) //LightGreen
       } else if (evaluationPlace(koma.index)) {
         poly.setFill(HotPink) //Salmon
@@ -414,16 +414,16 @@ object ShogiBoard extends JFXApp {
     /** 局面評価の表示 */
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
     board = if (!isWin) {
-      if (board.evaluationFunction >= 160) { //先手優勢
+      if (board.evaluationFunction >= 500) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction >= 80) { //先手有利
+      } else if (board.evaluationFunction >= 250) { //先手有利
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.Yuu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Yuri, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -80) { //後手優勢
+      } else if (board.evaluationFunction <= -500) { //後手優勢
         Board(Koma(ClickedKomaState.Go, 111, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displayGoteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displayGoteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -160) { //後手有利
+      } else if (board.evaluationFunction <= -250) { //後手有利
         Board(Koma(ClickedKomaState.Go, 111, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displayGoteKoma, displayKoma) ::
           Koma(ClickedKomaState.Yuu, 123, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Yuri, 129, displayGoteKoma, displayKoma) :: evaluationKomas)
       }
@@ -1478,6 +1478,7 @@ object ShogiBoard extends JFXApp {
         kifu = kifu.drop(4) //待ったをした場合を取り除く
         if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
+      firstWinMention = true
       firstKifuMention = true
       firstClickFlag = false
       clickCancel
@@ -1606,7 +1607,6 @@ object ShogiBoard extends JFXApp {
       /** 龍の場合 */
       if (inBoardKomaBranch(ClickedKomaState.Ryu)) inBordKomaMoveFlow(ClickedKomaState.Ryu)
 
-      //todo クリック問題再調査
       //デバッグ用
       println("selectedCellIndex:" + selectedCellIndex,"clickedIndex:"+clickedIndex,"stockNariIndex:" + stockNariIndex)
       println("optOnBoard:" + optOnBoard, "optOnBoardKomaState:" + optOnBoardKomaState)
@@ -1614,11 +1614,77 @@ object ShogiBoard extends JFXApp {
       println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
       println("isSenteTurnState:" + isSenteTurnState)
       println("")
+      println(board.evaluationFunction)
+      println(board.senteEvaluation.toInt, board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
+      println(board.goteEvaluation.toInt, board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
+      println("")
 
       boardSwitch
       isNifu = false
+      winDisplay
+
     })
     group
+  }
+
+  def winDisplay {
+    (isOuCatch, isCheckmate, isToryo) match {
+      case (Some(true), _, _) => isSenteTurnState match { //isOuCatch
+        case true => { //先手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "次に王が取れる状態です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "次に玉が取れる状態です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case (_, Some(true), _) => isSenteTurnState match { //isCheckmate
+        case true => { //先手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "先手詰みです"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "後手詰みです"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case (_, _, true) => isSenteTurnState match { //isToryo
+        case true => { //先手番 => 後手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "後手の勝ちです"
+            headerText = "先手投了です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+        case false => { //後手番 => 先手勝ち
+          new Alert(AlertType.Information) {
+            initOwner(stage)
+            title = "先手の勝ちです"
+            headerText = "後手投了です"
+          }.showAndWait()
+          firstWinMention = false
+        }
+      }
+      case _ =>
+    }
   }
 
   def allRandomBoard: Board = { //G
