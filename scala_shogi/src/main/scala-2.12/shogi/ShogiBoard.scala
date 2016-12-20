@@ -1628,8 +1628,8 @@ object ShogiBoard extends JFXApp {
   }
 
   def winDisplay {
-    (isOuCatch, isCheckmate, isToryo) match {
-      case (Some(true), _, _) => isSenteTurnState match { //isOuCatch
+    (isOuCatch, isCheckmate, isToryo, firstWinMention) match {
+      case (Some(true), _, _, true) => isSenteTurnState match { //isOuCatch
         case true => { //先手番 => 先手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
@@ -1647,7 +1647,7 @@ object ShogiBoard extends JFXApp {
           firstWinMention = false
         }
       }
-      case (_, Some(true), _) => isSenteTurnState match { //isCheckmate
+      case (_, Some(true), _, true) => isSenteTurnState match { //isCheckmate
         case true => { //先手番 => 後手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
@@ -1665,7 +1665,7 @@ object ShogiBoard extends JFXApp {
           firstWinMention = false
         }
       }
-      case (_, _, true) => isSenteTurnState match { //isToryo
+      case (_, _, true, true) => isSenteTurnState match { //isToryo
         case true => { //先手番 => 後手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
