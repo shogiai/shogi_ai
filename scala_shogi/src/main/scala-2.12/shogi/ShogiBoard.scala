@@ -215,7 +215,10 @@ object ShogiBoard extends JFXApp {
     maximized = true
   }
 
+  var isCheckmate: Option[Boolean] = None
+  var isOuCatch: Option[Boolean] = None
   var selectHand: Cursor = Cursor.Default
+  var firstKifuMention = true
 
   def repaint: Unit = {
     boardScene.content = boardObjPane
@@ -365,13 +368,11 @@ object ShogiBoard extends JFXApp {
 
   var isSenteTurnState: Boolean = true
   var (isWin, isCanNari, isNifu) = (false, false, false)
-  var isCheckmate: Option[Boolean] = None
-  var isOuCatch: Option[Boolean] = None
-
   var enemyOuTakeKomaStock: List[Int] = Nil
   var ouTookKomaStock: List[Int] = Nil
-  var toryoPushed = false
 
+  var toryoPushed = false
+  var admitWait = true
 
   def boardSwitch :Board = {
     val onBoardKomas: List[Koma] = board match { case Board(komas) => komas.takeRight(initialLength) }
@@ -379,7 +380,7 @@ object ShogiBoard extends JFXApp {
     def isInitialBoard = Board(onBoardKomas) == initialBoard
 
     /** 待ったのボタン更新 */
-    board = if (onBoardKomas != pastKomas && !isToryo) {
+    board = if (onBoardKomas != pastKomas && !isToryo && admitWait) { //
       Board(Koma(ClickedKomaState.Matta, 106, isSenteTurnState, displayKoma) :: onBoardKomas)
     } else Board(onBoardKomas)
 
@@ -1373,12 +1374,10 @@ object ShogiBoard extends JFXApp {
         if (isCheckmateCheck) {
           isWin = true
           isCheckmate = Some(true)
-          logOutPut
         }
         if (enemyOuTakeKomaStock.nonEmpty) { //手番で、手側側の駒が成ろうとしてる状態を除く
           isWin = true
           isOuCatch = Some(true)
-          logOutPut
         }
       }
     }
@@ -1418,14 +1417,14 @@ object ShogiBoard extends JFXApp {
           originalPushed = false //元に戻す
           val alert = new Alert(AlertType.Confirmation) {
             initOwner(stage)
-            title = "ルールを選択して下さい"
+            title = "一番下のルール１〜ルール６の中から選択して下さい"
             headerText = "独自の6パターンの初期局面からゲームを開始できます"
-            contentText =  "\n" + "ルール１ 歩以外の駒が歩の下の駒にランダムに配置されます" + "\n" + "\n" +
-              "ルール２ 歩の位置が1つ上がり、歩の下の3段に駒がランダムに配置されます" + "\n" + "\n" +
-              "ルール３ 先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" + "\n" +
-              "ルール４ 斜めに並んだ歩の下に駒が配置されます" + "\n" + "\n" +
-              "ルール５ 斜めの位置にランダムに駒が配置されます" + "\n" + "\n" +
-              "ルール６ 9×9マス中にランダムに駒が配置されます" + "\n" + "\n"
+            contentText =  "\n" + "ルール１では、歩以外の駒が歩の下の駒にランダムに配置されます" + "\n" + "\n" +
+              "ルール２では、歩の位置が1つ上がり、歩の下の3段に駒がランダムに配置されます" + "\n" + "\n" +
+              "ルール３では、先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" + "\n" +
+              "ルール４では、斜めに並んだ歩の下に駒が配置されます" + "\n" + "\n" +
+              "ルール５では、斜めの位置にランダムに駒が配置されます" + "\n" + "\n" +
+              "ルール６では、9×9マス中にランダムに駒が配置されます" + "\n" + "\n"
               buttonTypes = Seq(ButtonTypeOne, ButtonTypeTwo, ButtonTypeThree, ButtonTypeFour, ButtonTypeFive, ButtonTypeSix, ButtonType.Cancel)
           }
           val result = alert.showAndWait()
@@ -1464,6 +1463,7 @@ object ShogiBoard extends JFXApp {
 
         pastBoard = board //待ったはなし
         kifu = List("まで","手で","勝ち")
+        admitWait = true
         isSenteTurnState = true
         isToryo = false
       }
@@ -1472,6 +1472,7 @@ object ShogiBoard extends JFXApp {
         kifu = kifu.drop(4) //待ったをした場合を取り除く
         if (!isCanNari) isSenteTurnState = !isSenteTurnState
       }
+      firstKifuMention = true
       firstClickFlag = false
       clickCancel
       isCanNari = false
@@ -1602,9 +1603,31 @@ object ShogiBoard extends JFXApp {
 
       boardSwitch
       isNifu = false
-      repaint
+      kifuOutPutCheck
     })
     group
+  }
+
+  /** isOuCatch, isCheckmateの時に棋譜を出力するか一回だけ確認する */
+  def kifuOutPutCheck = {
+    if ((isOuCatch.contains(true) || isCheckmate.contains(true)) && firstKifuMention) {
+      val kifuOutPutAlert = new Alert(AlertType.Confirmation) {
+        initOwner(stage)
+        title = "棋譜を出力しますか?"
+        headerText = "棋譜を出力した場合、この対局を再開することはできません"
+      }
+      val kifuOutPutResult = kifuOutPutAlert.showAndWait()
+
+      kifuOutPutResult match {
+        case Some(ButtonType.OK) => {
+          firstKifuMention = false
+          logOutPut
+          admitWait = false
+        }
+        case _ => firstKifuMention = false
+      }
+      boardSwitch
+    }
   }
 
   def allRandomBoard: Board = { //G
