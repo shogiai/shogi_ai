@@ -292,10 +292,10 @@ object ShogiBoard extends JFXApp {
         poly.setFill(Cyan)
         poly.setStroke(LightBlue)
       } else if (statusPlace(koma.index)) {
-        poly.setFill(GreenYellow)
-        poly.setStroke(LightGreen)
+        poly.setFill(GreenYellow) //GreenYellow,LawnGreen,SpringGreen
+        poly.setStroke(LightGreen) //LightGreen
       } else if (evaluationPlace(koma.index)) {
-        poly.setFill(Salmon)
+        poly.setFill(HotPink) //Salmon
         poly.setStroke(Red)
       } else {
         poly.setFill(Sienna)
@@ -323,19 +323,19 @@ object ShogiBoard extends JFXApp {
         label.setLayoutY(27.5)
       } else if (koma.kind == ClickedKomaState.TouRyo || koma.kind == ClickedKomaState.Nari || koma.kind == ClickedKomaState.FuNari) {
         label.setFont(Font.font(25))
-        label.setTextFill(Color.Snow)
+        label.setTextFill(Color.AliceBlue)
         label.setMaxSize(50, 50)
         label.setLayoutX(15)
         label.setLayoutY(27.5)
       } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut) {
         label.setFont(Font(25))
-        label.setTextFill(Color.Snow)
+        label.setTextFill(Color.AliceBlue)
         label.setMaxSize(60, 60)
         label.setLayoutX(15)
         label.setLayoutY(12)
       } else if (koma.kind == ClickedKomaState.Matta) {
         label.setFont(Font.font(22))
-        label.setTextFill(Color.Snow)
+        label.setTextFill(Color.AliceBlue)
         label.setMaxSize(75, 75)
         label.setLayoutX(7)
         label.setLayoutY(29)
@@ -414,13 +414,13 @@ object ShogiBoard extends JFXApp {
     /** 局面評価の表示 */
     val evaluationKomas: List[Koma] = board match { case Board(komas) => komas }
     board = if (!isWin) {
-      if (board.evaluationFunction >= 400) { //先手優勢
+      if (board.evaluationFunction >= 200) { //先手優勢
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction >= 200) { //先手有利
+      } else if (board.evaluationFunction >= 100) { //先手有利
         Board(Koma(ClickedKomaState.Sen, 111, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displaySenteKoma, displayKoma) ::
           Koma(ClickedKomaState.Yuu, 123, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Yuri, 129, displaySenteKoma, displayKoma) :: evaluationKomas)
-      } else if (board.evaluationFunction <= -400) { //後手優勢
+      } else if (board.evaluationFunction <= -100) { //後手優勢
         Board(Koma(ClickedKomaState.Go, 111, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 117, displayGoteKoma, displayKoma) ::
           Koma(ClickedKomaState.YuSeiYu, 123, displayGoteKoma, displayKoma) :: Koma(ClickedKomaState.Sei, 129, displayGoteKoma, displayKoma) :: evaluationKomas)
       } else if (board.evaluationFunction <= -200) { //後手有利
