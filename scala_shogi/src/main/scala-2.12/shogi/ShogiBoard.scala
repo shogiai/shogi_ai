@@ -29,7 +29,7 @@ object ShogiBoard extends JFXApp {
   var board: Board = Board(
     Koma(ClickedKomaState.Sen, 87, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 93, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Ban, 99, displaySenteKoma, displayKoma) ::
       Koma(ClickedKomaState.GoKakuGo, 117, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 123, displaySenteKoma, displayKoma) ::
-      Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: initialKomas)
+      Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: initialKomas)
   var pastBoard: Board = board
 
   /** 棋譜の出力 */
@@ -209,7 +209,7 @@ object ShogiBoard extends JFXApp {
 
   /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
   stage = new JFXApp.PrimaryStage {
-    title.value = "Hello Scala Shogi!"
+    title.value = "kato-shogi-app!"
     scene = boardScene
     maximized = true
   }
@@ -278,7 +278,7 @@ object ShogiBoard extends JFXApp {
     val komaShape = { //駒の形を定義している
     val poly = {
       if (buttomKomas) {
-        Polygon(76, 11, 76, 76, 6, 76, 6, 11) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
+        Polygon(76, 6, 76, 76, 6, 76, 6, 6) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
       } else if (handDisplayPlace(koma.index)) {
         Polygon()
       } else {
@@ -326,19 +326,19 @@ object ShogiBoard extends JFXApp {
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(50, 50)
         label.setLayoutX(16)
-        label.setLayoutY(28.5)
+        label.setLayoutY(27)
       } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut) {
         label.setFont(Font(25))
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(62, 62)
         label.setLayoutX(16)
-        label.setLayoutY(16)
+        label.setLayoutY(13.5)
       } else if (koma.kind == ClickedKomaState.Matta) {
         label.setFont(Font.font(22))
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(75, 75)
         label.setLayoutX(8)
-        label.setLayoutY(30)
+        label.setLayoutY(27.5)
       }
       else if (displayPlace(koma.index)) {
         label.setTextFill(Color.AliceBlue)
@@ -910,6 +910,7 @@ object ShogiBoard extends JFXApp {
 
     /** Cellの描画を定義 */
     def fromOnBoard: Boolean = selectedCellIndex <= 80
+    def fromHandPlace: Boolean = (selectedCellIndex >= 81 && selectedCellIndex <= 134) && (selectedCellIndex - 81) % 6 != 0 && (selectedCellIndex - 81) / 6 != 4
     def toMoveBoard: Boolean = clickedIndex <= 80
     def handPlace: Boolean = (clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex - 81) % 6 != 0 && (clickedIndex-81) / 6 != 4
 
@@ -934,19 +935,19 @@ object ShogiBoard extends JFXApp {
     /** クリック時にどの判定を行うべきか分岐 */
     def useHandKomaBranch: Boolean = {
       isSenteTurnState match {
-        case true => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) &&
-          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
-        case false => (optOnBoard.contains(false) || optOnBoardKomaState == Option(false)) &&
-          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
+        case true => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) && !optOnBoard.contains(true) &&
+          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !isCanNari && !isWin
+        case false => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) && !optOnBoard.contains(true) &&
+          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !isCanNari && !isWin
       }
     }
 
     def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
       isSenteTurnState match {
-        case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) && // && clickedKomaKind == ClickedKomaState.None
-          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
+        case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
+          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !isCanNari && !isWin
         case false => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
-          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
+          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !isCanNari && !isWin
       }
     }
 
@@ -1153,8 +1154,13 @@ object ShogiBoard extends JFXApp {
     }
 
     //自分の駒である場合に付与というようにしたい
-    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
-    def fromHandToBoradAddState = if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    def fromToBoradAddState(koma: ClickedKomaState) = {
+      if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    }
+
+    def fromHandToBoradAddState = {
+      if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    }
 
     var firstClickFlag: Boolean = false
     def clickCancel = {
@@ -1340,11 +1346,12 @@ object ShogiBoard extends JFXApp {
     /** 手持ちの駒を盤面に打てるかどうかの判定 */
     def canSetFromHand: Boolean = {
       if (isSenteTurnState) {
-        toMoveBoard && optIsSenteKoma.isEmpty &&
+        fromHandPlace && toMoveBoard && optIsSenteKoma.isEmpty &&
           (!((clickedKomaKind == ClickedKomaState.Fu || clickedKomaKind == ClickedKomaState.Kyo) && (clickedIndex / 9) + 1 == 1)) && //先手の歩と香車は、1段目に打てない
           !(clickedKomaKind == ClickedKomaState.Kei && (clickedIndex / 9 + 1) <= 2) && //先手の桂馬は、1段目と2段目に打てない
           (clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true))) //二歩ではない
-      } else { toMoveBoard && optIsSenteKoma.isEmpty &&
+      } else {
+        fromHandPlace && toMoveBoard && optIsSenteKoma.isEmpty &&
         (!((clickedKomaKind == ClickedKomaState.Fu || clickedKomaKind == ClickedKomaState.Kyo) && (clickedIndex / 9) + 1 == 9)) &&
         !(clickedKomaKind == ClickedKomaState.Kei && (clickedIndex / 9 + 1) >= 8) &&
         (clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))
@@ -1614,10 +1621,13 @@ object ShogiBoard extends JFXApp {
       println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
       println("isSenteTurnState:" + isSenteTurnState)
       println("")
+
+      /*
       println(board.evaluationFunction)
       println(board.senteEvaluation.toInt, 15 * board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
       println(board.goteEvaluation.toInt, 15 * board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
       println("")
+      */
 
       boardSwitch
       isNifu = false
