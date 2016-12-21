@@ -1530,9 +1530,9 @@ object ShogiBoard extends JFXApp {
     group.setOnMouseMoved(e => {
       if (isWin || isCanNari) { //勝ちと成り不成の場合に押せるのはボタンのみ
         if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) {
-          selectHand = Cursor.Default
+          selectHand = Cursor.Hand
         } else {
-          selectHand = Cursor.WResize
+          selectHand = Cursor.Default
         }
       } else { //普段は
         if ((board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || (inHand(movedIndex) && !handDisplayPlace(movedIndex))) && movedIndex != selectedCellIndex) || //そこに手番側の動かせる駒がある(2度目のクリックの場合は反応しない)
@@ -1541,9 +1541,9 @@ object ShogiBoard extends JFXApp {
         ) { //選択した駒が動ける
           selectHand = Cursor.OpenHand
         } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined){ //ボタンの場所でそこに駒がある
-          selectHand = Cursor.Default
+          selectHand = Cursor.Hand
         } else {
-          selectHand = Cursor.WResize
+          selectHand = Cursor.Default
         }
       }
       repaint
