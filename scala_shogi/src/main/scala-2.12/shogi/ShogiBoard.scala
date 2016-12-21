@@ -209,7 +209,7 @@ object ShogiBoard extends JFXApp {
 
   /* `stage` は、trait JFXAppの中で、`null` で定義されてる */
   stage = new JFXApp.PrimaryStage {
-    title.value = "Hello Scala Shogi!"
+    title.value = "kato-shogi-app!"
     scene = boardScene
     maximized = true
   }
