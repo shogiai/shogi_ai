@@ -248,7 +248,7 @@ object ShogiBoard extends JFXApp {
     //投了確認ボタン
     if (toryoPushed) {
       val alert = new Alert(AlertType.Confirmation) {
-        initOwner(stage)
+        initOwner(stage) //scene, modality
         title = "投了しますか?"
         headerText = "投了した場合、この対局を再開することはできません"
       }
@@ -1615,8 +1615,8 @@ object ShogiBoard extends JFXApp {
       println("isSenteTurnState:" + isSenteTurnState)
       println("")
       println(board.evaluationFunction)
-      println(board.senteEvaluation.toInt, board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
-      println(board.goteEvaluation.toInt, board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
+      println(board.senteEvaluation.toInt, 15 * board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
+      println(board.goteEvaluation.toInt, 15 * board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
       println("")
 
       boardSwitch
