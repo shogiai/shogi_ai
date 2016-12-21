@@ -910,6 +910,7 @@ object ShogiBoard extends JFXApp {
 
     /** Cellの描画を定義 */
     def fromOnBoard: Boolean = selectedCellIndex <= 80
+    def fromHandPlace: Boolean = (selectedCellIndex >= 81 && selectedCellIndex <= 134) && (selectedCellIndex - 81) % 6 != 0 && (selectedCellIndex - 81) / 6 != 4
     def toMoveBoard: Boolean = clickedIndex <= 80
     def handPlace: Boolean = (clickedIndex >= 81 && clickedIndex <= 134) && (clickedIndex - 81) % 6 != 0 && (clickedIndex-81) / 6 != 4
 
@@ -934,19 +935,19 @@ object ShogiBoard extends JFXApp {
     /** クリック時にどの判定を行うべきか分岐 */
     def useHandKomaBranch: Boolean = {
       isSenteTurnState match {
-        case true => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) &&
-          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
-        case false => (optOnBoard.contains(false) || optOnBoardKomaState == Option(false)) &&
-          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(true) && !isCanNari && !isWin
+        case true => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) && !optOnBoard.contains(true) &&
+          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !isCanNari && !isWin
+        case false => (optOnBoard.contains(false) || optOnBoardKomaState.contains(false)) && !optOnBoard.contains(true) &&
+          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !isCanNari && !isWin
       }
     }
 
-    def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
+    def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {  //todo 次にクリックする場所が自分だった場合は入らないように
       isSenteTurnState match {
-        case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) && // && clickedKomaKind == ClickedKomaState.None
-          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
+        case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
+          (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !isCanNari && !isWin
         case false => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
-          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !optOnBoardKomaState.contains(false) && !isCanNari && !isWin
+          (optIsSenteKoma.contains(false) || optIsSenteKomaState.contains(false)) && !isSenteTurnState && !isCanNari && !isWin
       }
     }
 
@@ -1153,8 +1154,19 @@ object ShogiBoard extends JFXApp {
     }
 
     //自分の駒である場合に付与というようにしたい
-    def fromToBoradAddState(koma: ClickedKomaState) = if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
-    def fromHandToBoradAddState = if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    //todo この条件付与が厳しい
+    def fromToBoradAddState(koma: ClickedKomaState) = {
+      println("BoradAddState")
+      println(optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState))
+      println(optClickedKomaKind.contains(koma), optOnBoard.contains(true), optIsSenteKoma.contains(isSenteTurnState))
+
+      if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    }
+
+    def fromHandToBoradAddState = {
+      println("HandToBoradAddState")
+      if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
+    }
 
     var firstClickFlag: Boolean = false
     def clickCancel = {
@@ -1340,11 +1352,12 @@ object ShogiBoard extends JFXApp {
     /** 手持ちの駒を盤面に打てるかどうかの判定 */
     def canSetFromHand: Boolean = {
       if (isSenteTurnState) {
-        toMoveBoard && optIsSenteKoma.isEmpty &&
+        fromHandPlace && toMoveBoard && optIsSenteKoma.isEmpty &&
           (!((clickedKomaKind == ClickedKomaState.Fu || clickedKomaKind == ClickedKomaState.Kyo) && (clickedIndex / 9) + 1 == 1)) && //先手の歩と香車は、1段目に打てない
           !(clickedKomaKind == ClickedKomaState.Kei && (clickedIndex / 9 + 1) <= 2) && //先手の桂馬は、1段目と2段目に打てない
           (clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true))) //二歩ではない
-      } else { toMoveBoard && optIsSenteKoma.isEmpty &&
+      } else {
+        fromHandPlace && toMoveBoard && optIsSenteKoma.isEmpty &&
         (!((clickedKomaKind == ClickedKomaState.Fu || clickedKomaKind == ClickedKomaState.Kyo) && (clickedIndex / 9) + 1 == 9)) &&
         !(clickedKomaKind == ClickedKomaState.Kei && (clickedIndex / 9 + 1) >= 8) &&
         (clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))
@@ -1353,6 +1366,7 @@ object ShogiBoard extends JFXApp {
 
     /** 手持ちの駒を盤面に打つ時に行う処理 */
     def useHandKomaFlow = {
+      println("useHandKomaFlow")
       fromHandToBoradAddState
       if (toMoveBoard && optIsSenteKoma.isEmpty &&
         !(clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))) isNifu = true
@@ -1367,6 +1381,7 @@ object ShogiBoard extends JFXApp {
 
     /** 盤上から盤上へ移動する駒が行う処理 */
     def inBordKomaMoveFlow(koma: ClickedKomaState) = {
+      println("inBordKomaMoveFlow")
       fromToBoradAddState(koma)
       if (canMove(clickedKomaKind)) {
         takeKomaAndplayAndInitialize
@@ -1614,10 +1629,13 @@ object ShogiBoard extends JFXApp {
       println("optClickedKomaKind:" + optClickedKomaKind, "clickedKomaKind:" + clickedKomaKind)
       println("isSenteTurnState:" + isSenteTurnState)
       println("")
+
+      /*
       println(board.evaluationFunction)
       println(board.senteEvaluation.toInt, 15 * board.senteAmountEvaluation, board.senteOuDistanceEvaluation.toInt)
       println(board.goteEvaluation.toInt, 15 * board.goteAmountEvaluation, board.goteOuDistanceEvaluation.toInt)
       println("")
+      */
 
       boardSwitch
       isNifu = false
