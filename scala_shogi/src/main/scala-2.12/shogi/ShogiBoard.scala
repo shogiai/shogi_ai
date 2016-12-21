@@ -249,8 +249,9 @@ object ShogiBoard extends JFXApp {
     if (toryoPushed) {
       val alert = new Alert(AlertType.Confirmation) {
         initOwner(stage) //scene, modality
-        title = "投了しますか?"
-        headerText = "投了した場合、この対局を再開することはできません"
+        title = "投了の確認です"
+        headerText = "投了しますか?"
+        contentText = "投了した場合、この対局は再開できなくなります"
       }
       val result = alert.showAndWait()
 
@@ -1430,8 +1431,8 @@ object ShogiBoard extends JFXApp {
           originalPushed = false //元に戻す
           val alert = new Alert(AlertType.Confirmation) {
             initOwner(stage)
-            title = "一番下のルール１〜ルール６の中から選択して下さい"
-            headerText = "独自の6パターンの初期局面からゲームを開始できます"
+            title = "独自の６パターンの初期局面からゲームを開始できます"
+            headerText = "ルール１〜６の中から初期局面を選択して下さい"
             contentText =  "\n" + "ルール１では、歩以外の駒が歩の下の駒にランダムに配置されます" + "\n" + "\n" +
               "ルール２では、歩の位置が1つ上がり、歩の下の3段に駒がランダムに配置されます" + "\n" + "\n" +
               "ルール３では、先手は6~9段目、後手は1~4段目に駒がランダムに配置されます" + "\n" + "\n" +
@@ -1643,16 +1644,18 @@ object ShogiBoard extends JFXApp {
         case true => { //先手番 => 先手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "先手の勝ちです"
-            headerText = "次に王が取れる状態です"
+            title = "対局終了のお知らせ"
+            headerText = "先手の勝ちです"
+            contentText = "次に後手の王を先手が取れる状態です"
           }.showAndWait()
           firstWinMention = false
         }
         case false => { //後手番 => 後手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "後手の勝ちです"
-            headerText = "次に玉が取れる状態です"
+            title = "対局終了のお知らせ"
+            headerText = "後手の勝ちです"
+            contentText = "次に先手の玉を後手が取れる状態です"
           }.showAndWait()
           firstWinMention = false
         }
@@ -1661,16 +1664,18 @@ object ShogiBoard extends JFXApp {
         case true => { //先手番 => 後手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "後手の勝ちです"
-            headerText = "先手詰みです"
+            title = "対局終了のお知らせ"
+            headerText = "後手の勝ちです"
+            contentText = "先手詰みです"
           }.showAndWait()
           firstWinMention = false
         }
         case false => { //後手番 => 先手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "先手の勝ちです"
-            headerText = "後手詰みです"
+            title = "対局終了のお知らせ"
+            headerText = "先手の勝ちです"
+            contentText = "後手詰みです"
           }.showAndWait()
           firstWinMention = false
         }
@@ -1679,16 +1684,18 @@ object ShogiBoard extends JFXApp {
         case true => { //先手番 => 後手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "後手の勝ちです"
-            headerText = "先手投了です"
+            title = "対局終了のお知らせ"
+            headerText = "後手の勝ちです"
+            contentText = "先手投了です"
           }.showAndWait()
           firstWinMention = false
         }
         case false => { //後手番 => 先手勝ち
           new Alert(AlertType.Information) {
             initOwner(stage)
-            title = "先手の勝ちです"
-            headerText = "後手投了です"
+            title = "対局終了のお知らせ"
+            headerText = "先手の勝ちです"
+            contentText = "後手投了です"
           }.showAndWait()
           firstWinMention = false
         }
