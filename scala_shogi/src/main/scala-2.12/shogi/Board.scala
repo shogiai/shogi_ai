@@ -453,7 +453,7 @@ case class Board(komas: List[Koma]) {
     ClickedKomaState.NariKei -> 5,
     ClickedKomaState.NariGin -> 5,
     ClickedKomaState.Uma -> 13,
-    ClickedKomaState.Uma -> 15
+    ClickedKomaState.Ryu -> 15
   )
   def senteAmountEvaluation: Int = {
     senteKomaKind.foldLeft(0)((result, koma) => result + evalMap.getOrElse(koma, 0))
