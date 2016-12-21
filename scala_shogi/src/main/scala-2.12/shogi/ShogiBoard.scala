@@ -1532,7 +1532,7 @@ object ShogiBoard extends JFXApp {
         if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) {
           selectHand = Cursor.Default
         } else {
-          selectHand = Cursor.WResize
+          selectHand = Cursor.Text
         }
       } else { //普段は
         if ((board.findPlaceKomaisSente(movedIndex).contains(isSenteTurnState) && (inBord(movedIndex) || (inHand(movedIndex) && !handDisplayPlace(movedIndex))) && movedIndex != selectedCellIndex) || //そこに手番側の動かせる駒がある(2度目のクリックの場合は反応しない)
@@ -1543,7 +1543,7 @@ object ShogiBoard extends JFXApp {
         } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined){ //ボタンの場所でそこに駒がある
           selectHand = Cursor.Default
         } else {
-          selectHand = Cursor.WResize
+          selectHand = Cursor.Text
         }
       }
       repaint
