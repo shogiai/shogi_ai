@@ -29,7 +29,7 @@ object ShogiBoard extends JFXApp {
   var board: Board = Board(
     Koma(ClickedKomaState.Sen, 87, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Te, 93, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.Ban, 99, displaySenteKoma, displayKoma) ::
       Koma(ClickedKomaState.GoKakuGo, 117, displaySenteKoma, displayKoma) :: Koma(ClickedKomaState.GoKaKuKaKu, 123, displaySenteKoma, displayKoma) ::
-      Koma(ClickedKomaState.Original, 107, displaySenteKoma, displayKoma) :: initialKomas)
+      Koma(ClickedKomaState.Original, 108, displaySenteKoma, displayKoma) :: initialKomas)
   var pastBoard: Board = board
 
   /** 棋譜の出力 */
@@ -278,7 +278,7 @@ object ShogiBoard extends JFXApp {
     val komaShape = { //駒の形を定義している
     val poly = {
       if (buttomKomas) {
-        Polygon(76, 11, 76, 76, 6, 76, 6, 11) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
+        Polygon(76, 6, 76, 76, 6, 76, 6, 6) //Polygon(20, 5, 60, 5, 75, 20, 75, 60, 60, 75, 20, 75, 5, 60, 5, 20)
       } else if (handDisplayPlace(koma.index)) {
         Polygon()
       } else {
@@ -326,19 +326,19 @@ object ShogiBoard extends JFXApp {
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(50, 50)
         label.setLayoutX(16)
-        label.setLayoutY(28.5)
+        label.setLayoutY(27)
       } else if (koma.kind == ClickedKomaState.Normal || koma.kind == ClickedKomaState.Original || koma.kind == ClickedKomaState.KifuOutPut) {
         label.setFont(Font(25))
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(62, 62)
         label.setLayoutX(16)
-        label.setLayoutY(16)
+        label.setLayoutY(13.5)
       } else if (koma.kind == ClickedKomaState.Matta) {
         label.setFont(Font.font(22))
         label.setTextFill(Color.AliceBlue)
         label.setMaxSize(75, 75)
         label.setLayoutX(8)
-        label.setLayoutY(30)
+        label.setLayoutY(27.5)
       }
       else if (displayPlace(koma.index)) {
         label.setTextFill(Color.AliceBlue)
