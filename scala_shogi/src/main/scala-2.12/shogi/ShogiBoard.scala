@@ -942,7 +942,7 @@ object ShogiBoard extends JFXApp {
       }
     }
 
-    def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {  //todo 次にクリックする場所が自分だった場合は入らないように
+    def inBoardKomaBranch(koma: ClickedKomaState): Boolean = {
       isSenteTurnState match {
         case true => (optClickedKomaKind.contains(koma) || clickedKomaKind == koma && optClickedKomaKind.isEmpty) &&
           (optIsSenteKoma.contains(true) || optIsSenteKomaState.contains(true)) && isSenteTurnState && !isCanNari && !isWin
@@ -1154,17 +1154,11 @@ object ShogiBoard extends JFXApp {
     }
 
     //自分の駒である場合に付与というようにしたい
-    //todo この条件付与が厳しい
     def fromToBoradAddState(koma: ClickedKomaState) = {
-      println("BoradAddState")
-      println(optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState))
-      println(optClickedKomaKind.contains(koma), optOnBoard.contains(true), optIsSenteKoma.contains(isSenteTurnState))
-
       if (optClickedKomaKind.contains(koma) && optOnBoard.contains(true) && optIsSenteKoma.contains(isSenteTurnState)) addState
     }
 
     def fromHandToBoradAddState = {
-      println("HandToBoradAddState")
       if (optOnBoard.contains(false) && optIsSenteKoma.contains(isSenteTurnState)) addState
     }
 
@@ -1366,7 +1360,6 @@ object ShogiBoard extends JFXApp {
 
     /** 手持ちの駒を盤面に打つ時に行う処理 */
     def useHandKomaFlow = {
-      println("useHandKomaFlow")
       fromHandToBoradAddState
       if (toMoveBoard && optIsSenteKoma.isEmpty &&
         !(clickedKomaKind != ClickedKomaState.Fu || board.nifuCheck(clickedIndex, optIsSenteKomaState.contains(true)))) isNifu = true
@@ -1381,7 +1374,6 @@ object ShogiBoard extends JFXApp {
 
     /** 盤上から盤上へ移動する駒が行う処理 */
     def inBordKomaMoveFlow(koma: ClickedKomaState) = {
-      println("inBordKomaMoveFlow")
       fromToBoradAddState(koma)
       if (canMove(clickedKomaKind)) {
         takeKomaAndplayAndInitialize
