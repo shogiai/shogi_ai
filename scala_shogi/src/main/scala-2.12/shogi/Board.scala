@@ -393,7 +393,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
         senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + (16 - distanceToOu) * (16 - distanceToOu) * senteKomaPoint(i) / 8 //評価点 = (距離) * (駒の価値)
       } else {
-        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + 12 * senteKomaPoint(i) //持ち駒の場合
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint + 12 * 1.5 * senteKomaPoint(i) //持ち駒の場合
       }
     }
     //後手の駒と先手の王の距離
@@ -404,7 +404,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - senteOuRow) + 1.2 * Math.abs(nowColumn - senteOuColumn)
         senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - (16 - distanceToOu) * (16 - distanceToOu) * goteKomaPoint(i) / 8
       } else {
-        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * goteKomaPoint(i)
+        senteDistanceEvaluationPoint = senteDistanceEvaluationPoint - 12 * 1.5 * goteKomaPoint(i)
       }
     }
     senteDistanceEvaluationPoint
@@ -422,7 +422,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
         goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + (16 - distanceToOu) * (16 - distanceToOu) * goteKomaPoint(i) / 8 //評価点 = (距離) * (駒の価値)
       } else {
-        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + 12 * goteKomaPoint(i) //持ち駒の場合
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint + 12 * 1.5 * goteKomaPoint(i) //持ち駒の場合
       }
     }
     //先手の駒と後手の王の距離
@@ -433,7 +433,7 @@ case class Board(komas: List[Koma]) {
         val distanceToOu = 0.8 * Math.abs(nowRow - goteOuRow) + 1.2 * Math.abs(nowColumn - goteOuColumn)
         goteDistanceEvaluationPoint =  goteDistanceEvaluationPoint - (16 - distanceToOu) * (16 - distanceToOu) * senteKomaPoint(i) / 8
       } else {
-        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * senteKomaPoint(i)
+        goteDistanceEvaluationPoint = goteDistanceEvaluationPoint - 12 * 1.5 * senteKomaPoint(i)
       }
     }
     goteDistanceEvaluationPoint
