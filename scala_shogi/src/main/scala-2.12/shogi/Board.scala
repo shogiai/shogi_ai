@@ -329,55 +329,49 @@ case class Board(komas: List[Koma]) {
 
   //駒を点数に変換
   def senteKomaPoint: List[Double] = {
-    var senteKomaPoint: List[Double] = Nil
-    senteKomaKind.foreach(komaKind => {
-      senteKomaPoint = komaKind match {
-        case ClickedKomaState.Fu => 1 :: senteKomaPoint
-        case ClickedKomaState.Kyo => 3 :: senteKomaPoint
-        case ClickedKomaState.Kei => 4 :: senteKomaPoint
-        case ClickedKomaState.Gin => 6 :: senteKomaPoint
-        case ClickedKomaState.Kin => 8 :: senteKomaPoint
-        case ClickedKomaState.Kaku => 8 :: senteKomaPoint
-        case ClickedKomaState.Hisha => 12 :: senteKomaPoint
-        case ClickedKomaState.To => 9 :: senteKomaPoint
-        case ClickedKomaState.NariKyo => 8 :: senteKomaPoint
-        case ClickedKomaState.NariKei => 8 :: senteKomaPoint
-        case ClickedKomaState.NariGin => 8 :: senteKomaPoint
-        case ClickedKomaState.Uma => 13 :: senteKomaPoint
-        case ClickedKomaState.Ryu => 15 :: senteKomaPoint
-        case ClickedKomaState.Ou => 0 :: senteKomaPoint
-        case ClickedKomaState.Gyoku => 0 :: senteKomaPoint
-        case _ => senteKomaPoint
-      }
-    })
-    senteKomaPoint = senteKomaPoint.reverse
-    senteKomaPoint
+    val evalMaps: Map[ClickedKomaState, Double] = Map(
+      ClickedKomaState.Fu -> 1,
+      ClickedKomaState.Kyo -> 3,
+      ClickedKomaState.Kei -> 4,
+      ClickedKomaState.Gin -> 6,
+      ClickedKomaState.Kin -> 8,
+      ClickedKomaState.Kaku -> 8,
+      ClickedKomaState.Hisha -> 12,
+      ClickedKomaState.To -> 9,
+      ClickedKomaState.NariKyo -> 8,
+      ClickedKomaState.NariKei -> 8,
+      ClickedKomaState.NariGin -> 8,
+      ClickedKomaState.Uma -> 13,
+      ClickedKomaState.Ryu -> 15,
+      ClickedKomaState.Ou -> 0,
+      ClickedKomaState.Gyoku -> 0
+    )
+    senteKomaKind.foldLeft(Nil: List[Double])((result, koma) => evalMaps.getOrElse(koma, 0.0) :: result)
   }
 
   def goteKomaPoint: List[Double] = {
-    var goteKomaPoint: List[Double] = Nil
-    goteKomaKind.foreach(komaKind => {
-      goteKomaPoint = komaKind match {
-        case ClickedKomaState.Fu => 1 :: goteKomaPoint
-        case ClickedKomaState.Kyo => 3 :: goteKomaPoint
-        case ClickedKomaState.Kei => 4 :: goteKomaPoint
-        case ClickedKomaState.Gin => 6 :: goteKomaPoint
-        case ClickedKomaState.Kin => 8 :: goteKomaPoint
-        case ClickedKomaState.Kaku => 8 :: goteKomaPoint
-        case ClickedKomaState.Hisha => 12 :: goteKomaPoint
-        case ClickedKomaState.To => 9 :: goteKomaPoint
-        case ClickedKomaState.NariKyo => 8 :: goteKomaPoint
-        case ClickedKomaState.NariKei => 8 :: goteKomaPoint
-        case ClickedKomaState.NariGin => 8 :: goteKomaPoint
-        case ClickedKomaState.Uma => 13 :: goteKomaPoint
-        case ClickedKomaState.Ryu => 15 :: goteKomaPoint
-        case ClickedKomaState.Ou => 0 :: goteKomaPoint
-        case ClickedKomaState.Gyoku => 0 :: goteKomaPoint
-        case _ => goteKomaPoint
-      }
-    })
-    goteKomaPoint = goteKomaPoint.reverse
-    goteKomaPoint
+    goteKomaKind.foldLeft(Nil: List[Double]) {
+      case (result, koma) =>
+        val komaPoint = koma match {
+          case ClickedKomaState.Fu => 1
+          case ClickedKomaState.Kyo => 3
+          case ClickedKomaState.Kei => 4
+          case ClickedKomaState.Gin => 6
+          case ClickedKomaState.Kin => 8
+          case ClickedKomaState.Kaku => 8
+          case ClickedKomaState.Hisha => 12
+          case ClickedKomaState.To => 9
+          case ClickedKomaState.NariKyo => 8
+          case ClickedKomaState.NariKei => 8
+          case ClickedKomaState.NariGin => 8
+          case ClickedKomaState.Uma => 13
+          case ClickedKomaState.Ryu => 15
+          case ClickedKomaState.Ou => 0
+          case ClickedKomaState.Gyoku => 0
+          case _ => 0
+        }
+        komaPoint :: result
+    }
   }
 
   /** 王との距離の評価値 */

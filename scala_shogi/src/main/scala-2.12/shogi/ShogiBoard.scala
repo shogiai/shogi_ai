@@ -1548,7 +1548,7 @@ object ShogiBoard extends JFXApp {
           (optOnBoardKomaState.contains(false) && canSetFromHand) //持ち駒選択中
         ) { //選択した駒が動ける
           selectHand = Cursor.OpenHand
-        } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined){ //ボタンの場所でそこに駒がある
+        } else if (buttomPlace(movedIndex) && board.findPlaceKomaisSente(movedIndex).isDefined) { //ボタンの場所でそこに駒がある
           selectHand = Cursor.Hand
         } else {
           selectHand = Cursor.Default
